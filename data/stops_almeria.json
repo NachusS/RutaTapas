@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "city": "Almeria",
+    "title": "Almeria Centro - Nacho",
+    "start": {
+      "name": "Casa Puga",
+      "lat": 36.84037982678665,
+      "lng": -2.4664008253147705
+    },
+    "end": {
+      "name": "La Consentida",
+      "lat": 36.83881700109086, 
+      "lng": -2.464660708455987
+    }
+  },
+  "stops": [
+    {
+      "id": "casapuga",
+      "name": "Casa Puga",
+      "address": "",
+      "tapa": "Pescao frito",
+      "lat": 36.84037982678665,
+      "lng": -2.4664008253147705,
+      "photo": "assets/AlmeriaCasaPuga.JPG",
+      "notes": "Punto de encuentro inicial",
+      "web": "",
+      "order": 1
+    },
+    {
+      "id": "elquincho",
+      "name": "Bar El Quincho",
+      "address": "",
+      "tapa": "Gambas fritas /Salpicón Marisco",
+      "lat": 36.84041114270745,  
+      "lng": -2.4664288650321606,
+      "photo": "assets/AlmeriaElQuincho.jpg",
+      "notes": "",
+      "web": "https://elquinchobraseria.com/",
+      "order": 2
+    },
+    {
+      "id": "jovellanos16",
+      "name": "Jovellanos 16",
+      "address": "",
+      "tapa": "",
+      "lat": 36.84085398646019,  
+      "lng": -2.4667331186856467,
+      "photo": "assets/AlmeriaJovellanos.jpg",
+      "notes": "",
+      "web": "https://www.instagram.com/jovellanos16/?hl=es",
+      "order": 3
+    },
+    {
+      "id": "nuestratierra",
+      "name": "Taberna Nuestra Tierra",
+      "address": "",
+      "tapa": "",
+      "lat": 36.840873842413195,  
+      "lng": -2.466747200278364,
+      "photo": "assets/AlmeriaNuestraTierra.jpg",
+      "notes": "",
+      "web": "https://www.tabernanuestratierra.com/",
+      "order": 4
+    },
+    {
+      "id": "valentin",
+      "name": "Restaurante Valentín",
+      "address": "",
+      "tapa": "Champan con ostras",
+      "lat": 36.841203198324344,  
+      "lng": -2.4647054130129478,
+      "photo": "assets/AlmeriaValentin.jpg",
+      "notes": "",
+      "web": "https://www.restaurantevalentin.es/",
+      "order": 5
+    },
+    {
+      "id": "salitre",
+      "name": "Bar de Vinos Salitre",
+      "address": "",
+      "tapa": "Tapas Matias chico",
+      "lat": 36.84279169812791,   
+      "lng": -2.462805348556892,
+      "photo": "assets/AlmeriaSalitre.jpg",
+      "notes": "",
+      "web": "https://salitrebardevinos.es/",
+      "order": 6
+    },
+    {
+      "id": "laesquinica",
+      "name": "La Esquinica",
+      "address": "",
+      "tapa": "Tapas diseño",
+      "lat": 36.84062943303715,  
+      "lng": -2.4623831885003464,
+      "photo": "assets/AlmeriaLaEsquinica.jpg",
+      "notes": "",
+      "web": "https://www.instagram.com/la_esquinica_almeria/?hl=es",
+      "order": 7
+    },
+    {
+      "id": "quintotoro",
+      "name": "El Quinto Toro",
+      "address": "",
+      "tapa": "Remojon San Antón",
+      "lat": 36.83980935546997,  
+      "lng": -2.4624861732456473,
+      "photo": "assets/AlmeriaQuintoToro.jpg",
+      "notes": "",
+      "web": "https://www.facebook.com/elquintotoroalmeria/?locale=es_ES",
+      "order": 8
+    },
+    {
+      "id": "MiniBar",
+      "name": "Mini Bar",
+      "address": "",
+      "tapa": "Fritos de pescado",
+      "lat": 36.83784452198219,   
+      "lng": -2.461872031999616,
+      "photo": "assets/AlmeriaMiniBar.jpg",
+      "notes": "",
+      "web": "https://www.minube.com/rincon/restaurante-mini-bar-a79177",
+      "order": 9
+    },
+    {
+      "id": "casasevilla",
+      "name": "Casa Sevilla",
+      "address": "",
+      "tapa": "Jamón del bueno y caro",
+      "lat": 36.83743827224372,   
+      "lng": -2.4617683821611154,
+      "photo": "assets/AlmeriaCasaSevilla.jpg",
+      "notes": "",
+      "web": "https://casa-sevilla.com/",
+      "order": 10
+    },
+    {
+      "id": "rinconbasi",
+      "name": "El Rincon de Basi Centro",
+      "address": "",
+      "tapa": "hamburguesas",
+      "lat": 36.83624286916344,    
+      "lng": -2.4624333751103586,
+      "photo": "assets/AlmeriaRinconBasi.jpg",
+      "notes": "",
+      "web": "https://www.instagram.com/elrincondebasi/?hl=es",
+      "order": 11
+    },
+    {
+      "id": "lamala",
+      "name": "Restaurante La Mala Original",
+      "address": "",
+      "tapa": "Tortilla Patatas",
+      "lat": 36.837790775893794,    
+      "lng": -2.465694195745972,
+      "photo": "assets/AlmeriaLaMala.jpg",
+      "notes": "",
+      "web": "https://carta.menu/restaurants/almeria/la-mala-croqueteria",
+      "order": 12
+    },    
+    {
+      "id": "consentida",
+      "name": "La Consentida",
+      "address": "",
+      "tapa": "Franfurt",
+      "lat": 36.83881700109086, 
+      "lng": -2.464660708455987,
+      "photo": "assets/AlmeriaConsentida.jpg",
+      "notes": "",
+      "web": "https://braserialaconsentida.es/",
+      "order": 13
+    }
+  ]
+}

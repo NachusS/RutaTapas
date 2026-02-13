@@ -1,0 +1,44 @@
+{
+  "routes": [
+    {
+      "id": "ruta_01",
+      "title": "Granada",
+      "file": "data/stops.json"
+    },
+    {
+      "id": "ruta_02",
+      "title": "Lorca v.1",
+      "file": "data/stops_lorca.json"
+    },
+    {
+      "id": "ruta_03",
+      "title": "Adra v.1",
+      "file": "data/stops_adra.json"
+    },
+    {
+      "id": "ruta_04",
+      "title": "Cordoba v.1 - Paco",
+      "file": "data/stops_cordoba.json"
+    },
+    {
+      "id": "ruta_05",
+      "title": "Huescar",
+      "file": "data/stops_huescar.json"
+    },
+    {
+      "id": "ruta_06",
+      "title": "Almeria Centro",
+      "file": "data/stops_almeria.json"
+    },
+    {
+      "id": "ruta_07",
+      "title": "Malaga - Mamen",
+      "file": "data/stops_malaga.json"
+    },
+    {
+      "id": "ruta_08",
+      "title": "Alhama - GRX",
+      "file": "data/stops_alhamagrx.json"
+    }
+  ]
+}

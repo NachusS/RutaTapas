@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>RutaTapas MultiRuta · v7.0.2</title>
+  <meta name="description" content="Web-app dinámica de rutas de tapas a pie por Granada y Lorca.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Auth / Perfil (v7.0) -->
+  <div id="authOverlay" class="auth-overlay" aria-hidden="true">
+    <div class="auth-bg">
+      <img src="assets/cover.jpg" alt="" class="auth-bg-img">
+      <div class="auth-bg-gradient"></div>
+    </div>
+
+    <!-- Pantalla 1: crear perfil (primera vez) -->
+    <section id="authCreate" class="auth-screen" hidden>
+      <div class="auth-top">
+        <div class="auth-icon">
+          <span class="material-icons">restaurant</span>
+        </div>
+        <h2 class="auth-title">Bienvenido a RutaTapas <span class="accent">NachusS</span></h2>
+      </div>
+
+      <div class="auth-mid">
+        <div class="photo-picker">
+          <label class="photo-btn" for="profilePhotoInput" title="Subir foto" aria-label="Subir foto">
+            <div class="photo-btn-inner">
+              <span class="material-icons">add_a_photo</span>
+              <span class="photo-btn-label">Subir foto</span>
+            </div>
+          </label>
+          <input id="profilePhotoInput" type="file" accept="image/*" hidden>
+          <div class="photo-plus" aria-hidden="true"><span class="material-icons">add</span></div>
+        </div>
+
+        <p class="auth-hint">o elige un avatar</p>
+
+        <div class="avatar-row no-scrollbar" role="list">
+          <button type="button" class="avatar-btn is-selected" data-avatar="assets/avatars/avatar-oliva.svg" aria-label="Avatar olivas">
+            <img src="assets/avatars/avatar-oliva.svg" alt="">
+            <span class="avatar-check material-icons" aria-hidden="true">check</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="assets/avatars/avatar-croqueta.svg" aria-label="Avatar croqueta">
+            <img src="assets/avatars/avatar-croqueta.svg" alt="">
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="assets/avatars/avatar-vino.svg" aria-label="Avatar vino">
+            <img src="assets/avatars/avatar-vino.svg" alt="">
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="assets/avatars/avatar-birra.svg" aria-label="Avatar birra">
+            <img src="assets/avatars/avatar-birra.svg" alt="">
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="assets/avatars/avatar-taco.svg" aria-label="Avatar taco">
+            <img src="assets/avatars/avatar-taco.svg" alt="">
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="assets/avatars/avatar-flamenco.svg" aria-label="Avatar flamenco">
+            <img src="assets/avatars/avatar-flamenco.svg" alt="">
+          </button>
+        </div>
+
+        <div class="name-field">
+          <label for="profileName">¿Cómo te llamas?</label>
+          <div class="name-input">
+            <span class="material-icons" aria-hidden="true">person</span>
+            <input id="profileName" type="text" placeholder="Tu nombre..." autocomplete="name">
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-bottom">
+        <button id="createProfileBtn" class="primary-btn" type="button">
+          <span>Crear Perfil y Empezar</span>
+          <span class="material-icons" aria-hidden="true">arrow_forward</span>
+        </button>
+        <p class="legal">Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.</p>
+      </div>
+    </section>
+
+    <!-- Pantalla 2: login rápido (ya existe perfil) -->
+    <section id="authWelcome" class="auth-screen" hidden>
+      <div class="auth-top auth-top-welcome">
+        <h2 class="welcome-title">RutaTapas v7.0.2</h2>
+        <p class="welcome-handle"><span class="accent">@NachusS</span></p>
+      </div>
+
+      <div class="auth-mid auth-mid-welcome">
+        <div class="welcome-avatar-wrap">
+          <div class="welcome-glow" aria-hidden="true"></div>
+          <div class="welcome-avatar">
+            <img id="welcomeAvatarImg" src="" alt="Avatar del usuario">
+            <div class="welcome-avatar-shade" aria-hidden="true"></div>
+          </div>
+          <div class="welcome-badge" aria-hidden="true">
+            <span class="material-icons">verified</span>
+            <span>Foodie Experto</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-bottom auth-bottom-welcome">
+        <div class="welcome-copy">
+          <h3 id="welcomeTitle">¡Hola de nuevo!</h3>
+          <p>tus tapas te están esperando.</p>
+        </div>
+
+        <button id="continueBtn" class="primary-btn" type="button">
+          <span>Continuar mi Ruta</span>
+          <span class="material-icons" aria-hidden="true">explore</span>
+        </button>
+
+        <button id="switchAccountBtn" class="link-btn" type="button">
+          <span>¿No eres tú?</span> <span class="accent">Cambiar de cuenta</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div id="appShell" class="app-shell" hidden>
+  <header class="app-header" role="banner">
+    <div class="brand">
+      <img src="assets/cover.jpg" alt="Portada Ruta de Tapas" class="brand-cover" />
+      <h1 class="title">RutaTapas · <span id="routeLabel" aria-live="polite">–</span></h1>
+      <span class="version-badge" aria-label="Versión de la app">v7.0.2</span>
+    </div>
+
+    <div class="controls-row" role="group" aria-label="Controles principales">
+      <label for="routeSelect" class="control-label control-label-desktop">Selecciona ruta:</label>
+      <select id="routeSelect" aria-label="Selecciona una ruta"></select>
+
+      <label class="switch switch-desktop" title="Mostrar/ocultar trazado completo">
+        <input id="toggleFullRoute" type="checkbox" aria-label="Mostrar ruta completa">
+        <span class="slider"></span>
+        <span class="switch-label">Ruta completa</span>
+      </label>
+
+      <button id="toggleThemeBtn" class="btn" type="button" aria-pressed="false" aria-label="Cambiar modo claro/oscuro">🌓</button>
+      <button id="resetChecklistBtn" class="btn" type="button" aria-label="Reiniciar progreso">Reiniciar</button>
+    </div>
+
+    <section class="progress" aria-live="polite">
+      <div class="progress-header">
+        <strong>Progreso</strong>
+        <span id="progressText">0 / 0</span>
+      </div>
+      <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div class="eta-row">
+        <div><small>Tiempo estimado total: <span id="etaTotal">–</span></small></div>
+        <div><small>Llevas: <span id="etaDone">–</span></small></div>
+      </div>
+      <div class="eta-row">
+        <div><small>Distancia total: <span id="distanceTotal">–</span></small></div>
+      </div>
+    </section>
+
+    <div class="nav-actions" role="group" aria-label="Acciones de navegación">
+      <!-- Mobile-only visible label -->
+      <label for="routeSelect" class="control-label-mobile">Selecciona ruta:</label>
+
+      <label class="switch switch-mobile" title="Mostrar/ocultar trazado completo (móvil)">
+        <input id="toggleFullRouteMobile" type="checkbox" aria-label="Mostrar ruta completa">
+        <span class="slider"></span>
+        <span class="switch-label">Ruta completa</span>
+      </label>
+      <button id="startBtn" class="btn primary" type="button">Comenzar ruta</button>
+      <button id="nextBtn" class="btn" type="button">Siguiente parada</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section id="map" role="region" aria-label="Mapa de la ruta"></section>
+    <aside id="panel" role="region" aria-label="Listado de paradas"></aside>
+  </main>
+
+  <footer class="app-footer">
+    <div class="legend">
+      <span>🏁 Inicio/Fin</span>
+      <span>📍 Parada</span>
+      <span>👤 Mi posición</span>
+    </div>
+    <p class="privacy">
+      Creado por <a href="https://nachuss.github.io/" target="_blank" rel="noopener noreferrer">@NachusS</a> (13/11/2025) v.6.7.13
+    </p>
+  </footer>
+
+  <script src="app.js" defer></script>
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCuy6NyB1m3HcX5ISqdEH0iax_CkqUrrwo&callback=initMap"></script>
+  </div>
+</body>
+</html>

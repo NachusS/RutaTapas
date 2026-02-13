@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "city": "Malaga",
+    "title": "Malaga - Mamen",
+    "start": {
+      "name": "Antigua Casa Guardia",
+      "lat": 36.71792045651173, 
+      "lng": -4.422342151683617
+    },
+    "end": {
+      "name": "Bodega Bar El Pimpi",
+      "lat": 36.722085120520696, 
+      "lng": -4.41739330101712
+    }
+  },
+  "stops": [
+    {
+      "id": "casaguardia",
+      "name": "Antigua Casa Guardia",
+      "address": "",
+      "tapa": "Vinos y encurtidos",
+      "lat": 36.71792045651173,  
+      "lng": -4.422342151683617,
+      "photo": "assets/MalagaAntigua.png",
+      "notes": "",
+      "web": "https://antiguacasadeguardia.com/",
+      "order": 1
+    },
+    {
+      "id": "mellizos",
+      "name": "Los Mellizos",
+      "address": "",
+      "tapa": "Pescao, gambas y frituras",
+      "lat": 36.718952362730064,
+      "lng": -4.420636641154554,
+      "photo": "assets/MalagaLosMellizos.jpg",
+      "notes": "Punto de encuentro inicial",
+      "web": "https://losmellizos.net/",
+      "order": 2
+    },
+    {
+      "id": "logueno",
+      "name": "Meson Lo Güeno",
+      "address": "",
+      "tapa": "Milhoja de Cochinillo",
+      "lat": 36.71944904347154,  
+      "lng": -4.4219855362513325,
+      "photo": "assets/MalagaLoGueno.jpg",
+      "notes": "",
+      "web": "https://logueno.com/",
+      "order": 3
+    },
+    {
+      "id": "lacepa",
+      "name": "La cepa",
+      "address": "",
+      "tapa": "Bacalao",
+      "lat": 36.7197078293947,  
+      "lng": -4.4200352902879105,
+      "photo": "assets/MalagaLaCepa.jpg",
+      "notes": "",
+      "web": "https://cartarestaurantes.com/mesonlacepa/",
+      "order": 4
+    },
+    {
+      "id": "elpimpi",
+      "name": "Bodega Bar El Pimpi",
+      "address": "",
+      "tapa": "Langostinos al Pimpi",
+      "lat": 36.722085120520696,  
+      "lng": -4.41739330101712,
+      "photo": "assets/MalagaPimpi.jpg",
+      "notes": "",
+      "web": "https://www.elpimpi.com/",
+      "order": 5
+    }
+  ]
+}
+
