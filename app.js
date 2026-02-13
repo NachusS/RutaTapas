@@ -30,18 +30,24 @@ function clearProfile(){ localStorage.removeItem(PROFILE_KEY); }
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || null; }
-
-function loadJSON(url){
-  // Nota: evitamos cache-bust por query param para no romper servidores/entornos que no lo soportan.
-  const full = (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("file:"))
-    ? url
-    : new URL(url, document.baseURI).toString();
-
-  return fetch(full, { cache: "no-cache" }).then(r=>{
-    if(!r.ok) throw new Error(`HTTP ${r.status} al cargar ${full}`);
-    return r.json();
-  });
+function resolveAssetUrl(path){
+  if(!path) return path;
+  if(/^(https?:|file:)/i.test(path)) return path;
+  const base = document.querySelector('base')?.href || document.baseURI || location.href;
+  return new URL(path.replace(/^\.\//, ""), base).toString();
 }
+
+async function loadJSON(path){
+  const url = resolveAssetUrl(path);
+  const r = await fetch(url, { cache: "no-store" });
+  if(!r.ok){
+    const txt = await r.text().catch(()=> "");
+    throw new Error(`HTTP ${r.status} al cargar ${url}${txt ? " — " + txt.slice(0,120) : ""}`);
+  }
+  return r.json();
+}
+
+
 function getProgress(){ try{ return JSON.parse(localStorage.getItem(LS_KEYS.progress) || "{}"); }catch{ return {}; } }
 function setProgress(obj){ localStorage.setItem(LS_KEYS.progress, JSON.stringify(obj)); }
 function setTheme(theme){
@@ -55,11 +61,13 @@ function toggleTheme(){ const now=document.documentElement.getAttribute("data-th
 function minutesToHuman(min){ if(!Number.isFinite(min)) return "–"; const h=Math.floor(min/60); const m=Math.round(min%60); return h>0?`${h} h ${m} min`:`${m} min`; }
 
 async function loadRoutesList(){
+  const baseDir = location.origin + location.pathname.replace(/\/[^\/]*$/, "/");
   const tries = [
-    'data/routes.json',
-    './data/routes.json',
-    new URL('data/routes.json', document.baseURI).toString(),
-    'routes.json'
+    "data/routes.json",
+    "./data/routes.json",
+    resolveAssetUrl("data/routes.json"),
+    baseDir + "data/routes.json",
+    "routes.json"
   ];
   const errors = [];
   for(const t of tries){
@@ -72,8 +80,10 @@ async function loadRoutesList(){
       errors.push(`${t}: ${e && (e.message||e)}`);
     }
   }
-  showDiag('No se pudo cargar data/routes.json. Revisa ruta/estructura.');
+  showDiag('No se pudo cargar data/routes.json. Abre consola (F12) para ver qué URL falla.');
   console.error('Fallos al cargar rutas:', errors);
+  console.info('BaseURI:', document.baseURI, 'baseDir:', location.origin + location.pathname.replace(/\/[^\/]*$/, '/'));
+  console.table(errors.map(e=>({error:e})));
   return { routes: [] };
 }
 
@@ -562,7 +572,16 @@ function initProfileUI(){
         const c = state.map.getCenter();
         google.maps.event.trigger(state.map, "resize");
         if(c) state.map.setCenter(c);
+      
+    // Re-encuadra marcadores si ya hay paradas cargadas
+    try{
+      if(window.google && google.maps && state && state.map && Array.isArray(state.stops) && state.stops.length){
+        const b = new google.maps.LatLngBounds();
+        state.stops.forEach(s=> b.extend({lat:s.lat, lng:s.lng}));
+        state.map.fitBounds(b);
       }
+    }catch{}
+  }
     }catch{}
   }
 
