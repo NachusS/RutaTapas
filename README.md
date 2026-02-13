@@ -26,4 +26,4 @@ Ejemplo de `data/routes.json`:
 }
 ```
 # Acceso a la app-web
-https://nachuss.github.io/RutaTapasGRX/
+https://nachuss.github.io/RutaTapas/
