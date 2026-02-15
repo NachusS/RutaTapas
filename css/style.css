@@ -637,3 +637,19 @@ body.is-welcome .container{
   background: rgba(255,255,255,.03);
 }
 .rating-wrap{ margin-top: .6rem; }
+
+/* ===== Forzar 3 botones en una sola fila (móvil vertical incluido) ===== */
+.route-summary .actions-row{
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1.0rem !important;
+  align-items: stretch;
+}
+.route-summary .actions-row .btn{
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 1.1rem .6rem !important;
+  font-size: 1.25rem !important;
+  border-radius: 1.6rem !important;
+  white-space: nowrap;
+}

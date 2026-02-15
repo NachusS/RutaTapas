@@ -160,8 +160,6 @@ function stopItem(routeId, stop, prog, favs){
   meta.appendChild(makeEl('div','sub', stop.tapa ? ('Tapa: ' + stop.tapa) : (stop.address || '')));
 
   const right = makeEl('div','right','');
-  const done = prog.completedStopIds.includes(stop.id);
-
   // Marcar / desmarcar parada
   const toggleBtn = makeEl('button','fav-btn stop-toggle', done ? '✓' : '○');
   toggleBtn.type = 'button';
