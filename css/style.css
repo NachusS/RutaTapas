@@ -592,3 +592,18 @@ body.is-welcome .app-main{
 @media (min-width: 860px){
   .route-map-card .mapbox{ height: 44rem; }
 }
+
+/* ===== Centrado vertical/horizontal en pantalla de inicio ===== */
+body.is-welcome{
+  min-height: 100vh;
+}
+body.is-welcome .app-main{
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+body.is-welcome .container{
+  width: min(52rem, calc(100% - 3.2rem));
+}
