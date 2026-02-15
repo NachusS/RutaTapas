@@ -171,6 +171,100 @@ const btn = makeEl('a','btn btn-ghost','Ver');
   return item;
 }
 
+
+async function initRouteMap(el, data, routeId){
+  // Mapa compacto en la pantalla de ruta
+  if(!el) return;
+  await loadGoogleMaps();
+
+  const stops = (data && data.stops) ? data.stops : [];
+  const start = (data && data.meta && data.meta.start) ? { lat: data.meta.start.lat, lng: data.meta.start.lng }
+              : (stops[0] ? { lat: stops[0].lat, lng: stops[0].lng } : { lat: 37.17855, lng: -3.6036 });
+
+  const map = new window.google.maps.Map(el, {
+    center: start,
+    zoom: 15,
+    clickableIcons: false,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    zoomControl: true,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#0f1724" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#cfd7e3" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#0f1724" }] },
+      { featureType: "poi", stylers: [{ visibility: "off" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a344a" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1220" }] }
+    ]
+  });
+
+  // Línea punteada entre paradas
+  if(stops.length >= 2){
+    const path = stops.map(s => ({ lat: s.lat, lng: s.lng }));
+    const line = new window.google.maps.Polyline({
+      path,
+      geodesic: true,
+      strokeOpacity: 0,
+      icons: [{
+        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+        offset: '0',
+        repeat: '14px'
+      }]
+    });
+    line.setMap(map);
+  }
+
+  // Marcadores
+  const bounds = new window.google.maps.LatLngBounds();
+
+  // Inicio / Fin
+  if(data && data.meta && data.meta.start){
+    const p = { lat: data.meta.start.lat, lng: data.meta.start.lng };
+    new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
+    bounds.extend(p);
+  }
+  if(data && data.meta && data.meta.end){
+    const p = { lat: data.meta.end.lat, lng: data.meta.end.lng };
+    new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
+    bounds.extend(p);
+  }
+
+  stops.forEach((s)=>{
+    const p = { lat: s.lat, lng: s.lng };
+    new window.google.maps.Marker({ position: p, map, label: { text: '📍', fontSize: '16px' } });
+    bounds.extend(p);
+  });
+
+  if(!bounds.isEmpty()) map.fitBounds(bounds, 64);
+
+  // Mi posición (tracking)
+  let userMarker = null;
+  if('geolocation' in navigator){
+    const watchId = navigator.geolocation.watchPosition((pos)=>{
+      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if(!userMarker){
+        userMarker = new window.google.maps.Marker({
+          position: p,
+          map,
+          label: { text: '👤', fontSize: '16px' }
+        });
+      }else{
+        userMarker.setPosition(p);
+      }
+    }, ()=>{}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
+
+    // Limpieza al navegar: si el contenedor desaparece, paramos el watch
+    const obs = new MutationObserver(()=>{
+      if(!document.body.contains(el)){
+        try{ navigator.geolocation.clearWatch(watchId); }catch(_e){}
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList:true, subtree:true });
+  }
+}
+
 export function renderActiveRoute(root, route, data){
   root.replaceChildren();
   const container = makeEl('div','container','');
@@ -260,7 +354,7 @@ export function renderActiveRoute(root, route, data){
   mapBox.id = 'routeMap';
   mapCard.appendChild(mapBox);
 
-  initRouteMap(mapBox, data, prog);
+  initRouteMap(mapBox, data, route.id);
 
   // ===== TABLERO 3: Paradas =====
   const listCard = makeEl('section','card pad','');
