@@ -144,7 +144,7 @@ function updateProgressFromDOM(done){
 
 
 function stopItem(routeId, stop, prog, favs){
-  const item = makeEl('div','item','');
+  const item = makeEl('div','item' + (done ? ' is-done' : ''),'');
 
   const img = document.createElement('img');
   img.alt = 'Foto ' + stop.name;
@@ -161,8 +161,6 @@ function stopItem(routeId, stop, prog, favs){
 
   const right = makeEl('div','right','');
   const done = prog.completedStopIds.includes(stop.id);
-  const chip = makeEl('div','chip', done ? 'Hecha' : 'Pendiente');
-  right.appendChild(chip);
 
   // Marcar / desmarcar parada
   const toggleBtn = makeEl('button','fav-btn stop-toggle', done ? '✓' : '○');
@@ -180,7 +178,7 @@ function stopItem(routeId, stop, prog, favs){
     }
     saveProgress(routeId, prog);
     const nowDone = !isDone;
-    chip.textContent = nowDone ? 'Hecha' : 'Pendiente';
+    item.classList.toggle('is-done', nowDone);
     toggleBtn.textContent = nowDone ? '✓' : '○';
     toggleBtn.setAttribute('aria-pressed', String(nowDone));
     toggleBtn.setAttribute('aria-label', nowDone ? 'Marcar como pendiente' : 'Marcar como hecha');
@@ -469,88 +467,147 @@ async function initMiniMap(elId, data){
 export function renderStopDetails(root, route, data, stopId){
   root.replaceChildren();
   const container = makeEl('div','container','');
-  const grid = makeEl('div','grid cols2','');
 
-  const stops = data.stops || [];
-  const stop = stops.find(s => s.id === stopId) || stops[0];
+  if(!route || !data){
+    const card = makeEl('section','card pad','');
+    card.appendChild(makeEl('h1','h1','Detalle de parada'));
+    card.appendChild(makeEl('p','p','No hay datos de ruta cargados.'));
+    container.appendChild(card);
+    root.appendChild(container);
+    return;
+  }
+
   const prog = getProgress(route.id);
-  document.documentElement.dataset.rtTotalStops = String((data && Array.isArray(data.stops)) ? data.stops.length : 0);
   const favs = getFavorites(route.id);
 
-  const left = makeEl('section','card pad','');
-  left.appendChild(makeEl('h1','h1', stop ? stop.name : 'Parada'));
-  left.appendChild(makeEl('p','p', stop && stop.tapa ? ('Tapa típica: ' + stop.tapa) : 'Detalle de la parada.'));
+  const stops = (data.stops || []);
+  let stop = stops.find(s => s.id === stopId) || null;
+  if(!stop && stops.length) stop = stops[0];
+  if(!stop){
+    const card = makeEl('section','card pad','');
+    card.appendChild(makeEl('h1','h1','Detalle de parada'));
+    card.appendChild(makeEl('p','p','No hay paradas en esta ruta.'));
+    container.appendChild(card);
+    root.appendChild(container);
+    return;
+  }
 
-  const img = document.createElement('img');
-  img.alt = 'Foto de ' + (stop ? stop.name : 'parada');
-  img.src = (stop && stop.photo) ? stop.photo : 'assets/images/ui/placeholder_stop.jpg';
-  img.style.borderRadius = '2.2rem';
-  img.style.border = '1px solid rgba(255,255,255,.08)';
-  left.appendChild(img);
+  const isDone = Array.isArray(prog.completedStopIds) && prog.completedStopIds.includes(stop.id);
+  const isFav = !!(favs && favs[stop.id]);
+  const currentRating = Number((prog.stopRatings && prog.stopRatings[stop.id]) || 0);
 
-  left.appendChild(makeEl('div','small', stop && stop.address ? stop.address : 'Dirección no disponible'));
-  if(stop && stop.notes) left.appendChild(makeEl('div','small', stop.notes));
+  const card = makeEl('section','card pad','');
 
-  const done = prog.completedStopIds.includes(stop.id);
-  const doneChip = makeEl('div','badge', done ? 'Parada realizada' : 'Pendiente');
-  doneChip.style.marginTop = '1.0rem';
-  left.appendChild(doneChip);
-
-  left.appendChild(document.createElement('hr')).className = 'hr';
-
-  const actions = makeEl('div','row','');
-  const back = makeEl('a','btn btn-ghost','Volver a la ruta');
+  const topRow = makeEl('div','row spread','');
+  const back = makeEl('a','btn btn-ghost','← Ruta');
   back.href = '#/ruta?r=' + encodeURIComponent(route.id);
   const goMap = makeEl('a','btn','Ver en mapa');
   goMap.href = '#/mapa?r=' + encodeURIComponent(route.id);
-  const btnDone = makeEl('button','btn btn-primary', done ? 'Ya marcada' : 'Marcar como hecha');
-  btnDone.type = 'button';
-  btnDone.disabled = !!done;
+  topRow.appendChild(back);
+  topRow.appendChild(goMap);
 
-  actions.appendChild(back); actions.appendChild(goMap); actions.appendChild(btnDone);
-  left.appendChild(actions);
+  const h1 = makeEl('h1','h1', stop.name || 'Parada');
+  const sub = makeEl('p','p', stop.address || '');
 
-  const legend = makeEl('div','legend-right','');
-  legend.appendChild(makeEl('span','legend-item','🏁 Inicio/Fin'));
-  legend.appendChild(makeEl('span','legend-item','📍 Parada'));
-  legend.appendChild(makeEl('span','legend-item','👤 Yo'));
-  left.appendChild(legend);
+  const photo = document.createElement('img');
+  photo.alt = 'Foto de la parada';
+  photo.className = 'stop-photo';
+  photo.src = stop.photo || 'assets/images/ui/placeholder_stop.jpg';
 
-  const right = makeEl('section','card pad','');
-  right.appendChild(makeEl('h2','h2','Valorar esta parada'));
-  const current = Number(prog.stopRatings[stop.id] || 0);
+  const info = makeEl('div','small','');
+  info.textContent = stop.tapa ? ('Tapa típica: ' + stop.tapa) : 'Tapa típica: (sin especificar)';
 
-  const starsHost = makeEl('div','', '');
-  function renderStars(val){
-    starsHost.replaceChildren();
-    starsHost.appendChild(buildStars(val, (n)=>{
-      prog.stopRatings[stop.id] = n;
-      saveProgress(route.id, prog);
-      renderStars(n);
-      if(window.RT_TOAST) window.RT_TOAST('Valoración guardada: ' + n + '★');
-    }));
-  }
-  renderStars(current);
+  const notes = makeEl('p','p', stop.notes || '');
 
-  right.appendChild(starsHost);
-  right.appendChild(makeEl('div','small','Tu valoración se guarda en este dispositivo.'));
-  right.appendChild(document.createElement('hr')).className = 'hr';
-  right.appendChild(makeEl('div','small','Sugerencia: cuando estés cerca (<60 m), puedes hacer check‑in rápidamente.'));
-
-  grid.appendChild(left); grid.appendChild(right);
-  container.appendChild(grid);
-  root.appendChild(container);
-
-  btnDone.addEventListener('click', (e)=>{
+  // Acciones: hecho + favorito
+  const actions = makeEl('div','row','');
+  const doneBtn = makeEl('button','btn', isDone ? '✓ Hecha' : '○ Marcar hecha');
+  doneBtn.type = 'button';
+  doneBtn.addEventListener('click', (e)=>{
     e.preventDefault();
-    if(prog.completedStopIds.includes(stop.id)) return;
-    prog.completedStopIds.push(stop.id);
+    const nowDone = !(prog.completedStopIds || []).includes(stop.id);
+    prog.completedStopIds = Array.isArray(prog.completedStopIds) ? prog.completedStopIds : [];
+    if(nowDone) prog.completedStopIds.push(stop.id);
+    else prog.completedStopIds = prog.completedStopIds.filter(x => x !== stop.id);
     saveProgress(route.id, prog);
-    btnDone.disabled = true;
-    btnDone.textContent = 'Ya marcada';
-    doneChip.textContent = 'Parada realizada';
-    if(window.RT_TOAST) window.RT_TOAST('Parada marcada como realizada.');
+    if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
+    renderStopDetails(root, route, data, stop.id);
   });
+
+  const favBtn = makeEl('button','btn', isFav ? '♥ Favorito' : '♡ Añadir a favoritos');
+  favBtn.type = 'button';
+  favBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const now = !(favs && favs[stop.id]);
+    if(!favs) {}
+    if(now) favs[stop.id] = true;
+    else delete favs[stop.id];
+    saveFavorites(route.id, favs);
+    if(window.RT_TOAST) window.RT_TOAST(now ? 'Añadido a favoritos' : 'Quitado de favoritos');
+    renderStopDetails(root, route, data, stop.id);
+  });
+
+  actions.appendChild(doneBtn);
+  actions.appendChild(favBtn);
+
+  // Rating: 5 estrellas
+  const ratingWrap = makeEl('div','rating-wrap','');
+  const ratingTitle = makeEl('div','label','Valora esta parada');
+  const stars = makeEl('div','stars','');
+  const hint = makeEl('div','small','Toca una estrella para valorar (1-5).');
+
+  function setRating(val){
+    const v = Number(val||0);
+    prog.stopRatings = prog.stopRatings && typeof prog.stopRatings === 'object' ? prog.stopRatings : {};
+    if(v <= 0) delete prog.stopRatings[stop.id];
+    else prog.stopRatings[stop.id] = v;
+    saveProgress(route.id, prog);
+    if(window.RT_TOAST) window.RT_TOAST('Valoración guardada: ' + v + '★');
+    // refresca
+    renderStopDetails(root, route, data, stop.id);
+  }
+
+  for(let i=1;i<=5;i++){
+    const b = makeEl('button','star-btn', i <= currentRating ? '★' : '☆');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Puntuar ' + i + ' de 5');
+    b.setAttribute('aria-pressed', String(i <= currentRating));
+    b.addEventListener('click',(e)=>{
+      e.preventDefault();
+      setRating(i);
+    });
+    stars.appendChild(b);
+  }
+
+  ratingWrap.appendChild(ratingTitle);
+  ratingWrap.appendChild(stars);
+  ratingWrap.appendChild(hint);
+
+  // Link web si existe
+  let webRow = null;
+  if(stop.web){
+    webRow = makeEl('div','small','');
+    const a = document.createElement('a');
+    a.href = stop.web;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = 'Abrir web';
+    webRow.appendChild(a);
+  }
+
+  card.appendChild(topRow);
+  card.appendChild(h1);
+  card.appendChild(sub);
+  card.appendChild(photo);
+  card.appendChild(info);
+  if(stop.notes) card.appendChild(notes);
+  card.appendChild(actions);
+  card.appendChild(makeEl('hr','hr',''));
+  card.appendChild(ratingWrap);
+  if(webRow){ card.appendChild(makeEl('hr','hr','')); card.appendChild(webRow); }
+
+  container.appendChild(card);
+  root.appendChild(container);
 }
 
 export function renderMapView(root, route, data){
