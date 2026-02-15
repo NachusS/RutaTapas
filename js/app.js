@@ -34,6 +34,19 @@ function toast(message){
 }
 window.RT_TOAST = toast;
 
+
+function requestGeolocationPermission(){
+  if(!('geolocation' in navigator)) return;
+  try{
+    navigator.geolocation.getCurrentPosition(
+      ()=>{},
+      ()=>{},
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 }
+    );
+  }catch(_e){}
+}
+
+
 function focusApp(){ const app = qs('#app'); if(app) app.focus(); }
 
 function parseHash(){
@@ -157,6 +170,7 @@ async function route(){
 
 window.addEventListener('hashchange', route);
 window.addEventListener('DOMContentLoaded', async ()=>{
+  requestGeolocationPermission();
   bindGlobal();
   if(!window.location.hash) window.location.hash = '#/welcome';
   await route();

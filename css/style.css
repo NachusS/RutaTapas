@@ -390,3 +390,149 @@ button, input, select, textarea{ font:inherit; color:inherit; }
   color: var(--text);
   font-weight: 800;
 }
+
+/* ===== Pantallas Inicio (profile1 / profile2) ===== */
+.welcome-card, .welcome2-card{
+  text-align:center;
+  padding: 2.0rem 1.8rem;
+}
+.welcome-icon{
+  width:4.6rem;
+  height:4.6rem;
+  border-radius: 1.6rem;
+  display:grid;
+  place-items:center;
+  margin: 1.0rem auto 1.4rem;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,122,26,.10);
+  font-size: 2.2rem;
+}
+.welcome-title{
+  font-size: 3.2rem;
+  font-weight: 900;
+  margin: 0;
+}
+.welcome-brand{
+  margin-top: .4rem;
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: var(--accent);
+}
+.photo-uploader{
+  width: 18rem;
+  height: 18rem;
+  border-radius: 999px;
+  margin: 2.0rem auto 1.6rem;
+  border: 2px dashed rgba(255,255,255,.18);
+  display:grid;
+  place-items:center;
+  position: relative;
+  background: rgba(0,0,0,.10);
+}
+.photo-btn{
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.6rem;
+  color: var(--muted);
+}
+.photo-cam{ font-size: 3.0rem; }
+.photo-txt{ font-size: 1.4rem; font-weight: 800; }
+.photo-plus{
+  position:absolute;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 999px;
+  background: rgba(255,122,26,.95);
+  color:#101319;
+  display:grid;
+  place-items:center;
+  font-weight: 900;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+.avatar-title{
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: .6rem;
+  margin-bottom: 1.0rem;
+}
+.avatar-row{
+  display:flex;
+  justify-content:center;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+.avatar-btn{
+  width: 6.2rem;
+  height: 6.2rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.10);
+  padding: 0;
+  overflow:hidden;
+  background: transparent;
+  cursor:pointer;
+  opacity: .78;
+}
+.avatar-btn img{ width:100%; height:100%; object-fit:cover; display:block; }
+.avatar-btn.is-selected{
+  opacity: 1;
+  border-color: rgba(255,122,26,.75);
+  box-shadow: 0 10px 24px rgba(0,0,0,.30);
+}
+.welcome-hint{ margin-top: .8rem; margin-bottom: 1.0rem; }
+.btn-big{
+  width:100%;
+  justify-content:center;
+  padding: 1.6rem 1.6rem;
+  border-radius: 2.2rem;
+  font-size: 1.7rem;
+}
+.welcome-legal{
+  margin-top: 1.2rem;
+  opacity: .65;
+}
+
+/* profile2 */
+.welcome2-top{ margin-top: .8rem; }
+.welcome2-title{ font-size: 3.2rem; font-weight: 900; }
+.welcome2-handle{ margin-top: .6rem; font-size: 2.0rem; color: var(--accent); font-weight: 900; }
+.welcome2-avatar{
+  width: 16rem;
+  height: 16rem;
+  border-radius: 999px;
+  margin: 2.2rem auto 1.8rem;
+  padding: .6rem;
+  background: linear-gradient(135deg, rgba(255,122,26,.90), rgba(255,156,74,.22));
+  position: relative;
+}
+.welcome2-avatar img{
+  width:100%; height:100%;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(15,23,36,.65);
+}
+.welcome2-badge{
+  position:absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -1.2rem;
+  padding: .8rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.92);
+  color:#111;
+  font-weight: 900;
+  font-size: 1.3rem;
+}
+.welcome2-hello{
+  font-size: 3.0rem;
+  font-weight: 900;
+  margin-top: 1.4rem;
+}
+.welcome2-sub{ margin-top: .4rem; margin-bottom: 2.0rem; }
+.welcome2-change{ margin-top: 1.2rem; opacity: .75; }
+.welcome2-change a{ color: var(--accent2); font-weight: 800; }

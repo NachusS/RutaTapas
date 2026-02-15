@@ -21,24 +21,181 @@ function readFileAsDataURL(file){
 }
 export function renderWelcome(root){
   root.replaceChildren();
-  const c=makeEl('div','container','');
-  const g=makeEl('div','grid cols2','');
-  const left=makeEl('section','card pad','');
-  left.appendChild(makeEl('h1','h1','Bienvenido a RutaTapas v1.0'));
-  left.appendChild(makeEl('p','p','Crea tu perfil rápido y empieza una ruta de tapas. Todo queda guardado en tu dispositivo.'));
-  const prof=ensureProfile(false);
-  const row=makeEl('div','row','');
-  const start=makeEl('a','btn btn-primary', (prof&&prof.name)?'Continuar':'Crear perfil');
-  start.href=(prof&&prof.name)?'#/ruta':'#/perfil';
-  const sel=makeEl('a','btn','Seleccionar ruta'); sel.href='#/seleccionar';
-  row.appendChild(start); row.appendChild(sel);
-  left.appendChild(row);
-  const right=makeEl('section','card pad','');
-  right.appendChild(makeEl('h2','h2','Consejo rápido'));
-  right.appendChild(makeEl('p','p','Activa la geolocalización para ver tu posición en el mapa y seguir la ruta a pie.'));
-  g.appendChild(left); g.appendChild(right);
-  c.appendChild(g); root.appendChild(c);
+  const container = makeEl('div','container','');
+  const prof = ensureProfile(false);
+
+  if(!prof || !prof.name){
+    // ===== Pantalla profile1 (primera vez) =====
+    const card = makeEl('section','card pad welcome-card','');
+
+    const icon = makeEl('div','welcome-icon','🍢');
+    const h1 = makeEl('h1','welcome-title','Bienvenido a RutaTapas');
+    const brand = makeEl('div','welcome-brand','NachusS');
+    const hint = makeEl('div','small welcome-hint','Sube una foto o elige un avatar y escribe tu nombre.');
+
+    const form = document.createElement('form');
+    form.noValidate = true;
+
+    // Foto
+    const photoWrap = makeEl('div','photo-uploader','');
+    const photoBtn = makeEl('label','photo-btn','');
+    photoBtn.setAttribute('for','inpPhoto');
+    const cam = makeEl('div','photo-cam','📷');
+    const txt = makeEl('div','photo-txt','Subir foto');
+    photoBtn.appendChild(cam);
+    photoBtn.appendChild(txt);
+
+    const plus = makeEl('div','photo-plus','+');
+    photoWrap.appendChild(photoBtn);
+    photoWrap.appendChild(plus);
+
+    const inpPhoto = document.createElement('input');
+    inpPhoto.type = 'file';
+    inpPhoto.accept = 'image/*';
+    inpPhoto.id = 'inpPhoto';
+    inpPhoto.className = 'hidden';
+    photoWrap.appendChild(inpPhoto);
+
+    // Avatares
+    const avatarTitle = makeEl('div','avatar-title','o elige un avatar');
+    const avatars = makeEl('div','avatar-row','');
+    const avatarFiles = [
+      'assets/images/avatares/avatar_01.jpg',
+      'assets/images/avatares/avatar_02.jpg',
+      'assets/images/avatares/avatar_03.jpg',
+      'assets/images/avatares/avatar_04.jpg'
+    ];
+
+    let selectedAvatar = avatarFiles[0];
+    function selectAvatar(path){
+      selectedAvatar = path;
+      avatars.querySelectorAll('button').forEach(b=>{
+        b.classList.toggle('is-selected', b.getAttribute('data-src') === path);
+      });
+    }
+
+    avatarFiles.forEach((src, idx)=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'avatar-btn' + (idx===0 ? ' is-selected' : '');
+      b.setAttribute('data-src', src);
+      b.setAttribute('aria-label', 'Seleccionar avatar ' + (idx+1));
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = 'Avatar ' + (idx+1);
+      b.appendChild(img);
+      b.addEventListener('click', (e)=>{ e.preventDefault(); selectAvatar(src); });
+      avatars.appendChild(b);
+    });
+
+    // Nombre
+    const field = makeEl('div','field','');
+    const lab = makeEl('label','label','¿Cómo te llamas?');
+    lab.setAttribute('for','inpName');
+    const inpName = document.createElement('input');
+    inpName.className = 'input';
+    inpName.id = 'inpName';
+    inpName.type = 'text';
+    inpName.placeholder = 'Tu nombre...';
+    field.appendChild(lab);
+    field.appendChild(inpName);
+
+    const submit = makeEl('button','btn btn-primary btn-big','Crear Perfil y Empezar →');
+    submit.type = 'submit';
+
+    const legal = makeEl('div','small welcome-legal','Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.');
+
+    let chosenPhotoDataUrl = '';
+
+    inpPhoto.addEventListener('change', async ()=>{
+      const f = inpPhoto.files && inpPhoto.files[0] ? inpPhoto.files[0] : null;
+      if(!f) return;
+      try{
+        chosenPhotoDataUrl = await readFileAsDataURL(f);
+        cam.textContent = '✅';
+        txt.textContent = 'Foto lista';
+      }catch{
+        chosenPhotoDataUrl = '';
+      }
+    });
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = inpName.value.trim();
+      if(!name){
+        if(window.RT_TOAST) window.RT_TOAST('Por favor, escribe tu nombre.');
+        inpName.focus();
+        return;
+      }
+      const next = { name, avatar: selectedAvatar, photoDataUrl: chosenPhotoDataUrl };
+      saveProfile(next);
+      if(window.RT_TOAST) window.RT_TOAST('Perfil creado.');
+      window.location.hash = '#/ruta';
+    });
+
+    card.appendChild(icon);
+    card.appendChild(h1);
+    card.appendChild(brand);
+    card.appendChild(photoWrap);
+    card.appendChild(avatarTitle);
+    card.appendChild(avatars);
+    card.appendChild(hint);
+    form.appendChild(field);
+    form.appendChild(submit);
+    card.appendChild(form);
+    card.appendChild(legal);
+
+    container.appendChild(card);
+    root.appendChild(container);
+    return;
+  }
+
+  // ===== Pantalla profile2 (usuario existente) =====
+  const card = makeEl('section','card pad welcome2-card','');
+
+  const top = makeEl('div','welcome2-top','');
+  const t1 = makeEl('div','welcome2-title','RutaTapas v1.0');
+  const t2 = makeEl('div','welcome2-handle','@' + prof.name);
+  top.appendChild(t1); top.appendChild(t2);
+
+  const avatarWrap = makeEl('div','welcome2-avatar','');
+  const img = document.createElement('img');
+  img.alt = 'Foto de perfil';
+  img.src = prof.photoDataUrl ? prof.photoDataUrl : (prof.avatar || 'assets/images/avatares/avatar_01.jpg');
+  avatarWrap.appendChild(img);
+
+  const badge = makeEl('div','welcome2-badge','Foodie Experto');
+  avatarWrap.appendChild(badge);
+
+  const hello = makeEl('div','welcome2-hello','¡Hola de nuevo, ' + prof.name + '!');
+  const sub = makeEl('div','small welcome2-sub','tus tapas te están esperando.');
+
+  const btn = makeEl('a','btn btn-primary btn-big','Continuar mi Ruta  🧭');
+  btn.href = '#/ruta';
+
+  const change = makeEl('div','small welcome2-change','¿No eres tú? ');
+  const a = document.createElement('a');
+  a.href = '#/welcome';
+  a.textContent = 'Cambiar de cuenta';
+  a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    localStorage.removeItem('rt_profile');
+    if(window.RT_TOAST) window.RT_TOAST('Perfil eliminado. Crea uno nuevo.');
+    window.location.hash = '#/welcome';
+  });
+  change.appendChild(a);
+
+  card.appendChild(top);
+  card.appendChild(avatarWrap);
+  card.appendChild(hello);
+  card.appendChild(sub);
+  card.appendChild(btn);
+  card.appendChild(change);
+
+  container.appendChild(card);
+  root.appendChild(container);
 }
+
 export function renderProfile(root){
   root.replaceChildren();
   const c=makeEl('div','container','');
