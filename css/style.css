@@ -558,3 +558,37 @@ body.is-welcome .app-main{
   padding-top: 0;
   padding-bottom: 0;
 }
+
+/* ===== Layout pantalla Ruta (resumen / mapa / paradas) ===== */
+.route-stack{
+  display:flex;
+  flex-direction:column;
+  gap: 1.6rem;
+}
+.route-summary .route-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 1.2rem;
+}
+.route-summary .route-title{
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin: 0;
+}
+.route-summary .legend-right{
+  margin-top: .2rem;
+}
+.route-summary .actions-row{
+  display:flex;
+  gap: 1.0rem;
+  flex-wrap:wrap;
+  margin-top: 1.2rem;
+}
+.route-summary .actions-row .btn{
+  flex: 1 1 16rem;
+}
+.route-map-card .mapbox{ height: 32rem; }
+@media (min-width: 860px){
+  .route-map-card .mapbox{ height: 44rem; }
+}

@@ -174,81 +174,110 @@ const btn = makeEl('a','btn btn-ghost','Ver');
 export function renderActiveRoute(root, route, data){
   root.replaceChildren();
   const container = makeEl('div','container','');
-  const grid = makeEl('div','grid cols2','');
 
-  const left = makeEl('section','card pad','');
-  left.appendChild(makeEl('h1','h1', (data.meta && data.meta.city) ? data.meta.city : (route ? route.title : 'Ruta')));
-  left.appendChild(makeEl('p','p', (data.meta && data.meta.title) ? data.meta.title : 'Ruta de tapas a pie.'));
+  if(!route || !data){
+    const card = makeEl('section','card pad','');
+    card.appendChild(makeEl('h1','h1','Ruta'));
+    card.appendChild(makeEl('p','p','No hay ruta cargada.'));
+    container.appendChild(card);
+    root.appendChild(container);
+    return;
+  }
 
   const prog = getProgress(route.id);
   const favs = getFavorites(route.id);
-  const stops = data.stops || [];
-  const progUI = renderProgressBlock(stops.length, prog.completedStopIds.length);
 
-  const actions = makeEl('div','row','');
-  const btnStart = makeEl('button','btn btn-primary','Comenzar ruta');
-  btnStart.type = 'button';
-  const btnNext = makeEl('button','btn','Siguiente parada');
-  btnNext.type = 'button';
-  const btnSelect = makeEl('a','btn','Cambiar ruta');
-  btnSelect.href = '#/seleccionar';
-  actions.appendChild(btnStart); actions.appendChild(btnNext); actions.appendChild(btnSelect);
+  const stack = makeEl('div','route-stack','');
 
-  const listWrap = makeEl('div','', '');
-  listWrap.appendChild(makeEl('h2','h2','Paradas'));
-  const list = makeEl('div','list','');
-  stops.forEach(s => list.appendChild(stopItem(route.id, s, prog, favs)));
-  listWrap.appendChild(list);
+  // ===== TABLERO 1: Resumen (título + leyenda + progreso + botones) =====
+  const summary = makeEl('section','card pad route-summary','');
 
-  left.appendChild(progUI);
-  left.appendChild(document.createElement('hr')).className = 'hr';
-  left.appendChild(actions);
+  const head = makeEl('div','route-head','');
+  const title = makeEl('h1','route-title', route.title || 'Ruta');
+  head.appendChild(title);
 
   const legend = makeEl('div','legend-right','');
   legend.appendChild(makeEl('span','legend-item','🏁 Inicio/Fin'));
   legend.appendChild(makeEl('span','legend-item','📍 Parada'));
   legend.appendChild(makeEl('span','legend-item','👤 Mi posición'));
-  left.appendChild(legend);
-  left.appendChild(document.createElement('hr')).className = 'hr';
-  left.appendChild(listWrap);
+  head.appendChild(legend);
 
-  const right = makeEl('section','card pad','');
-  right.appendChild(makeEl('h2','h2','Mapa y seguimiento'));
-  right.appendChild(makeEl('p','p','Usa el mapa detallado para ver la ruta completa y tu posición en tiempo real.'));
+  summary.appendChild(head);
 
-  const map = makeEl('div','mapbox',''); map.id = 'mapMini';
-  right.appendChild(map);
-  right.appendChild(document.createElement('hr')).className = 'hr';
-  const goMap = makeEl('a','btn btn-primary','Abrir mapa detallado');
-  goMap.href = '#/mapa?r=' + encodeURIComponent(route.id);
-  right.appendChild(goMap);
-  right.appendChild(makeEl('div','small','Consejo: si estás cerca de la siguiente parada, verás un aviso para hacer check‑in.'));
+  // Progreso
+  const progressUI = renderProgressUI(route, data, prog);
+  summary.appendChild(progressUI);
 
-  grid.appendChild(left);
-  grid.appendChild(right);
-  container.appendChild(grid);
-  root.appendChild(container);
+  // Botones principales debajo de la línea de progreso
+  const actions = makeEl('div','actions-row','');
 
+  const btnStart = makeEl('button','btn btn-primary','Comenzar ruta');
+  btnStart.type = 'button';
   btnStart.addEventListener('click', (e)=>{
     e.preventDefault();
     if(!prog.startedAt){
-      prog.startedAt = new Date().toISOString();
+      prog.startedAt = Date.now();
       saveProgress(route.id, prog);
+      if(window.RT_TOAST) window.RT_TOAST('Ruta iniciada.');
     }
-    if(window.RT_TOAST) window.RT_TOAST('Seguimiento activado. Abre el mapa detallado para la ruta completa.');
+    renderActiveRoute(root, route, data);
   });
 
+  const btnNext = makeEl('button','btn','Siguiente parada');
+  btnNext.type = 'button';
   btnNext.addEventListener('click', (e)=>{
     e.preventDefault();
-    const next = nextStop(route.id, stops, prog);
-    if(!next){
-      if(window.RT_TOAST) window.RT_TOAST('¡Ruta completada!');
+    const nextStop = getNextStop(data, prog);
+    if(!nextStop){
+      if(window.RT_TOAST) window.RT_TOAST('No hay más paradas pendientes.');
       return;
     }
-    window.location.hash = '#/parada?r=' + encodeURIComponent(route.id) + '&s=' + encodeURIComponent(next.id);
+    window.location.hash = '#/parada?r=' + encodeURIComponent(route.id) + '&s=' + encodeURIComponent(nextStop.id);
   });
 
-  initMiniMap('mapMini', data).catch(()=>{});
+  const btnReset = makeEl('button','btn btn-danger','Reiniciar');
+  btnReset.type = 'button';
+  btnReset.addEventListener('click', (e)=>{
+    e.preventDefault();
+    resetProgress(route.id);
+    if(window.RT_TOAST) window.RT_TOAST('Progreso reiniciado.');
+    renderActiveRoute(root, route, data);
+  });
+
+  actions.appendChild(btnStart);
+  actions.appendChild(btnNext);
+  actions.appendChild(btnReset);
+  summary.appendChild(actions);
+
+  // ===== TABLERO 2: Mapa y seguimiento =====
+  const mapCard = makeEl('section','card pad route-map-card','');
+  const mapTitleRow = makeEl('div','row spread','');
+  mapTitleRow.appendChild(makeEl('h2','h2','Mapa y seguimiento'));
+  mapTitleRow.appendChild(makeEl('div','small','Activa la ubicación para ver tu posición.'));
+  mapCard.appendChild(mapTitleRow);
+
+  const mapBox = makeEl('div','mapbox','');
+  mapBox.id = 'routeMap';
+  mapCard.appendChild(mapBox);
+
+  initRouteMap(mapBox, data, prog);
+
+  // ===== TABLERO 3: Paradas =====
+  const listCard = makeEl('section','card pad','');
+  listCard.appendChild(makeEl('h2','h2','Paradas de la ruta'));
+
+  const list = makeEl('div','list','');
+  (data.stops || []).forEach(s => {
+    list.appendChild(stopItem(route.id, s, prog, favs));
+  });
+  listCard.appendChild(list);
+
+  stack.appendChild(summary);
+  stack.appendChild(mapCard);
+  stack.appendChild(listCard);
+
+  container.appendChild(stack);
+  root.appendChild(container);
 }
 
 async function initMiniMap(elId, data){
