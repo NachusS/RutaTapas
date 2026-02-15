@@ -130,6 +130,19 @@ function renderProgressBlock(total, done){
   return wrap;
 }
 
+
+function updateProgressFromDOM(done){
+  const total = Number(document.documentElement.dataset.rtTotalStops || '0') || 0;
+  const badge = document.querySelector('.route-summary .progress-wrap .badge');
+  const small = document.querySelector('.route-summary .progress-wrap .small');
+  const fill = document.querySelector('.route-summary .progressbar > div');
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  if(badge) badge.textContent = done + '/' + total + ' paradas';
+  if(small) small.textContent = pct + '% completado';
+  if(fill) fill.style.width = pct + '%';
+}
+
+
 function stopItem(routeId, stop, prog, favs){
   const item = makeEl('div','item','');
 
@@ -148,9 +161,34 @@ function stopItem(routeId, stop, prog, favs){
 
   const right = makeEl('div','right','');
   const done = prog.completedStopIds.includes(stop.id);
-  right.appendChild(makeEl('div','chip', done ? 'Hecha' : 'Pendiente'));
+  const chip = makeEl('div','chip', done ? 'Hecha' : 'Pendiente');
+  right.appendChild(chip);
 
-  
+  // Marcar / desmarcar parada
+  const toggleBtn = makeEl('button','fav-btn stop-toggle', done ? '✓' : '○');
+  toggleBtn.type = 'button';
+  toggleBtn.setAttribute('aria-label', done ? 'Marcar como pendiente' : 'Marcar como hecha');
+  toggleBtn.setAttribute('aria-pressed', String(done));
+  toggleBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const isDone = prog.completedStopIds.includes(stop.id);
+    if(isDone){
+      prog.completedStopIds = prog.completedStopIds.filter(x => x !== stop.id);
+    }else{
+      prog.completedStopIds.push(stop.id);
+    }
+    saveProgress(routeId, prog);
+    const nowDone = !isDone;
+    chip.textContent = nowDone ? 'Hecha' : 'Pendiente';
+    toggleBtn.textContent = nowDone ? '✓' : '○';
+    toggleBtn.setAttribute('aria-pressed', String(nowDone));
+    toggleBtn.setAttribute('aria-label', nowDone ? 'Marcar como pendiente' : 'Marcar como hecha');
+    updateProgressFromDOM(prog.completedStopIds.length);
+    if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
+  });
+  right.appendChild(toggleBtn);
+
   // Favorito
   const isFav = !!(favs && favs[stop.id]);
   const favBtn = makeEl('button','fav-btn', isFav ? '♥' : '♡');
@@ -291,6 +329,7 @@ export function renderActiveRoute(root, route, data){
   }
 
   const prog = getProgress(route.id);
+  document.documentElement.dataset.rtTotalStops = String((data && Array.isArray(data.stops)) ? data.stops.length : 0);
   const favs = getFavorites(route.id);
 
   const stack = makeEl('div','route-stack','');
@@ -305,7 +344,7 @@ export function renderActiveRoute(root, route, data){
   const legend = makeEl('div','legend-right','');
   legend.appendChild(makeEl('span','legend-item','🏁 Inicio/Fin'));
   legend.appendChild(makeEl('span','legend-item','📍 Parada'));
-  legend.appendChild(makeEl('span','legend-item','👤 Mi posición'));
+  legend.appendChild(makeEl('span','legend-item','👤 Yo'));
   head.appendChild(legend);
 
   summary.appendChild(head);
@@ -317,7 +356,7 @@ export function renderActiveRoute(root, route, data){
   // Botones principales debajo de la línea de progreso
   const actions = makeEl('div','actions-row','');
 
-  const btnStart = makeEl('button','btn btn-primary','Comenzar ruta');
+  const btnStart = makeEl('button','btn btn-primary','Comenzar');
   btnStart.type = 'button';
   btnStart.addEventListener('click', (e)=>{
     e.preventDefault();
@@ -329,7 +368,7 @@ export function renderActiveRoute(root, route, data){
     renderActiveRoute(root, route, data);
   });
 
-  const btnNext = makeEl('button','btn','Siguiente parada');
+  const btnNext = makeEl('button','btn','Siguiente');
   btnNext.type = 'button';
   btnNext.addEventListener('click', (e)=>{
     e.preventDefault();
@@ -435,6 +474,7 @@ export function renderStopDetails(root, route, data, stopId){
   const stops = data.stops || [];
   const stop = stops.find(s => s.id === stopId) || stops[0];
   const prog = getProgress(route.id);
+  document.documentElement.dataset.rtTotalStops = String((data && Array.isArray(data.stops)) ? data.stops.length : 0);
   const favs = getFavorites(route.id);
 
   const left = makeEl('section','card pad','');
@@ -473,7 +513,7 @@ export function renderStopDetails(root, route, data, stopId){
   const legend = makeEl('div','legend-right','');
   legend.appendChild(makeEl('span','legend-item','🏁 Inicio/Fin'));
   legend.appendChild(makeEl('span','legend-item','📍 Parada'));
-  legend.appendChild(makeEl('span','legend-item','👤 Mi posición'));
+  legend.appendChild(makeEl('span','legend-item','👤 Yo'));
   left.appendChild(legend);
 
   const right = makeEl('section','card pad','');
@@ -553,6 +593,7 @@ export function renderMapView(root, route, data){
   btnNext.addEventListener('click', (e)=>{
     e.preventDefault();
     const prog = getProgress(route.id);
+  document.documentElement.dataset.rtTotalStops = String((data && Array.isArray(data.stops)) ? data.stops.length : 0);
   const favs = getFavorites(route.id);
     const stops = data.stops || [];
     const next = nextStop(route.id, stops, prog);
@@ -569,6 +610,7 @@ async function initFullMap(route, data, infoLeft, infoRight, btnCenter){
 
   const stops = data.stops || [];
   const prog = getProgress(route.id);
+  document.documentElement.dataset.rtTotalStops = String((data && Array.isArray(data.stops)) ? data.stops.length : 0);
   const favs = getFavorites(route.id);
 
   const start = (data.meta && data.meta.start) ? { lat: data.meta.start.lat, lng: data.meta.start.lng }

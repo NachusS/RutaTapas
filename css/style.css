@@ -607,3 +607,13 @@ body.is-welcome .app-main{
 body.is-welcome .container{
   width: min(52rem, calc(100% - 3.2rem));
 }
+
+/* Toggle de parada (pendiente/hecha) */
+.stop-toggle{
+  font-weight: 900;
+}
+.stop-toggle[aria-pressed="true"]{
+  background: rgba(34,197,94,.14);
+  border-color: rgba(34,197,94,.40);
+  color: #bff3cf;
+}
