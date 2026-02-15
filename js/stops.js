@@ -33,7 +33,9 @@ function getNextStop(data, prog){
   return nextStop(data, prog);
 }
 function renderProgressUI(route, data, prog){
-  return renderProgressBlock(route, data, prog);
+  const total = (data && Array.isArray(data.stops)) ? data.stops.length : 0;
+  const done = (prog && Array.isArray(prog.completedStopIds)) ? prog.completedStopIds.length : 0;
+  return renderProgressBlock(total, done);
 }
 
 function getFavoritesKey(routeId){ return 'rt_favorites_' + routeId; }
