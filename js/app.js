@@ -2,6 +2,7 @@ import { ensureProfile, renderWelcome, renderProfile } from './profile.js';
 import { loadRoutesIndex, renderSelectRoute } from './routes.js';
 import { loadRouteStops, renderActiveRoute, renderStopDetails, renderMapView } from './stops.js';
 import { renderDashboard } from './dashboard.js';
+import { renderUserProfile } from './user_profile.js';
 
 const App = { state: { routesIndex: null, currentRoute: null, currentStops: null } };
 
@@ -126,6 +127,12 @@ async function route(){
     p.textContent = 'Aquí verás tus bares favoritos (guardado en este dispositivo).';
     card.appendChild(h); card.appendChild(p);
     wrap.appendChild(card); app.appendChild(wrap);
+    focusApp(); return;
+  }
+
+  if(path === '/mi-perfil'){
+    await initData();
+    renderUserProfile(app, App.state.routesIndex);
     focusApp(); return;
   }
 

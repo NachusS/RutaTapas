@@ -291,3 +291,102 @@ button, input, select, textarea{ font:inherit; color:inherit; }
   background: rgba(255,122,26,.14);
   border-color: rgba(255,122,26,.45);
 }
+
+/* ===== Pantalla Mi Perfil (dashboard + logros) ===== */
+.profile-card{ overflow:hidden; }
+.profile-top{
+  display:flex;
+  gap:1.4rem;
+  align-items:center;
+  margin: 1.0rem 0 1.2rem;
+}
+.avatar-wrap{
+  width: 9.6rem;
+  height: 9.6rem;
+  border-radius: 999px;
+  padding: .5rem;
+  background: linear-gradient(135deg, rgba(255,122,26,.90), rgba(255,156,74,.30));
+  box-shadow: 0 12px 28px rgba(0,0,0,.35);
+  flex: 0 0 auto;
+}
+.avatar-img{
+  width:100%;
+  height:100%;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(15,23,36,.65);
+}
+.profile-namebox{ min-width:0; }
+.profile-name{
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: .01em;
+  margin-bottom: .4rem;
+}
+.level-row{ display:flex; align-items:center; justify-content:space-between; gap:1.2rem; flex-wrap:wrap; }
+.metrics-grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.2rem;
+}
+@media (min-width: 860px){
+  .metrics-grid{ grid-template-columns: repeat(4, 1fr); }
+}
+.metric{
+  border-radius: 1.8rem;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(15,23,36,.55);
+  padding: 1.2rem;
+  min-height: 8.8rem;
+  display:flex;
+  flex-direction:column;
+  gap:.4rem;
+}
+.metric-ico{ font-size: 1.8rem; opacity: .95; }
+.metric-val{ font-size: 2.2rem; font-weight: 900; }
+.metric-lab{ font-size: 1.2rem; color: var(--muted); font-weight: 700; }
+
+.medals-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+  margin-top: 1.2rem;
+}
+@media (min-width: 860px){
+  .medals-grid{ grid-template-columns: repeat(6, 1fr); }
+}
+.medal{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.8rem;
+  padding: 1.0rem .6rem;
+  border-radius: 1.8rem;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(15,23,36,.40);
+  text-align:center;
+}
+.medal-circle{
+  width: 6.8rem;
+  height: 6.8rem;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-size: 2.4rem;
+  border: 3px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.04);
+}
+.medal.is-on .medal-circle{
+  border-color: rgba(255,122,26,.60);
+  box-shadow: 0 12px 28px rgba(0,0,0,.35);
+}
+.medal.is-off{
+  opacity: .42;
+  filter: grayscale(100%);
+}
+.medal-title{
+  font-size: 1.2rem;
+  color: var(--text);
+  font-weight: 800;
+}
