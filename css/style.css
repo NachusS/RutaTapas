@@ -536,3 +536,25 @@ button, input, select, textarea{ font:inherit; color:inherit; }
 .welcome2-sub{ margin-top: .4rem; margin-bottom: 2.0rem; }
 .welcome2-change{ margin-top: 1.2rem; opacity: .75; }
 .welcome2-change a{ color: var(--accent2); font-weight: 800; }
+
+/* ===== Header compacto (sin botones) ===== */
+.header-row{
+  padding: 1.0rem 0;
+}
+.brand-mark{
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 1.1rem;
+}
+.brand-title{ font-size: 1.5rem; }
+.brand-subtitle{ font-size: 1.1rem; }
+
+/* ===== Pantalla de inicio limpia: sin header ni footer ===== */
+body.is-welcome .app-header,
+body.is-welcome .bottom-nav{
+  display: none !important;
+}
+body.is-welcome .app-main{
+  padding-top: 0;
+  padding-bottom: 0;
+}

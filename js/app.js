@@ -8,6 +8,10 @@ const App = { state: { routesIndex: null, currentRoute: null, currentStops: null
 
 function qs(sel, root=document){ return root.querySelector(sel); }
 
+function setWelcomeMode(isWelcome){
+  document.body.classList.toggle('is-welcome', !!isWelcome);
+}
+
 function setActiveNav(hash){
   const links = document.querySelectorAll('.nav-link');
   links.forEach(a => {
@@ -87,6 +91,7 @@ function bindGlobal(){
 
 async function route(){
   const { path, query, raw } = parseHash();
+  setWelcomeMode(path === '/' || path === '/welcome');
   setActiveNav(raw.startsWith('#/mapa') ? '#/mapa'
     : raw.startsWith('#/dashboard') ? '#/dashboard'
     : raw.startsWith('#/logros') ? '#/logros'
