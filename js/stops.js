@@ -26,6 +26,16 @@ function saveProgress(routeId, prog){
   localStorage.setItem(getProgressKey(routeId), JSON.stringify(prog));
 }
 
+function resetProgress(routeId){
+  try{ localStorage.removeItem(getProgressKey(routeId)); }catch(_e){}
+}
+function getNextStop(data, prog){
+  return nextStop(data, prog);
+}
+function renderProgressUI(route, data, prog){
+  return renderProgressBlock(route, data, prog);
+}
+
 function getFavoritesKey(routeId){ return 'rt_favorites_' + routeId; }
 function getFavorites(routeId){
   const raw = localStorage.getItem(getFavoritesKey(routeId));
