@@ -144,10 +144,13 @@ function updateProgressFromDOM(done){
 
 
 function stopItem(routeId, stop, prog, favs){
+  prog.completedStopIds = Array.isArray(prog.completedStopIds) ? prog.completedStopIds : [];
+  const done = prog.completedStopIds.includes(stop.id);
+
   const item = makeEl('div','item' + (done ? ' is-done' : ''),'');
 
   const img = document.createElement('img');
-  img.alt = 'Foto ' + stop.name;
+  img.alt = 'Foto ' + (stop.name || 'parada');
   img.src = stop.photo || 'assets/images/ui/placeholder_stop.jpg';
   img.style.width = '6.2rem';
   img.style.height = '6.2rem';
@@ -156,11 +159,12 @@ function stopItem(routeId, stop, prog, favs){
   img.style.border = '1px solid rgba(255,255,255,.08)';
 
   const meta = makeEl('div','meta','');
-  meta.appendChild(makeEl('div','title', (stop.order || '') + '. ' + stop.name));
+  meta.appendChild(makeEl('div','title', (stop.order || '') + '. ' + (stop.name || 'Parada')));
   meta.appendChild(makeEl('div','sub', stop.tapa ? ('Tapa: ' + stop.tapa) : (stop.address || '')));
 
   const right = makeEl('div','right','');
-  // Marcar / desmarcar parada
+
+  // Toggle hecha/pendiente (sin etiqueta textual)
   const toggleBtn = makeEl('button','fav-btn stop-toggle', done ? '✓' : '○');
   toggleBtn.type = 'button';
   toggleBtn.setAttribute('aria-label', done ? 'Marcar como pendiente' : 'Marcar como hecha');
@@ -169,18 +173,18 @@ function stopItem(routeId, stop, prog, favs){
     e.preventDefault();
     e.stopPropagation();
     const isDone = prog.completedStopIds.includes(stop.id);
-    if(isDone){
-      prog.completedStopIds = prog.completedStopIds.filter(x => x !== stop.id);
-    }else{
-      prog.completedStopIds.push(stop.id);
-    }
+    if(isDone) prog.completedStopIds = prog.completedStopIds.filter(x => x !== stop.id);
+    else prog.completedStopIds.push(stop.id);
+
     saveProgress(routeId, prog);
+
     const nowDone = !isDone;
     item.classList.toggle('is-done', nowDone);
     toggleBtn.textContent = nowDone ? '✓' : '○';
     toggleBtn.setAttribute('aria-pressed', String(nowDone));
     toggleBtn.setAttribute('aria-label', nowDone ? 'Marcar como pendiente' : 'Marcar como hecha');
     updateProgressFromDOM(prog.completedStopIds.length);
+
     if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
   });
   right.appendChild(toggleBtn);
@@ -205,17 +209,19 @@ function stopItem(routeId, stop, prog, favs){
     if(window.RT_TOAST) window.RT_TOAST(now ? 'Añadido a favoritos' : 'Quitado de favoritos');
   });
   right.appendChild(favBtn);
-const btn = makeEl('a','btn btn-ghost','Ver');
-  btn.href = '#/parada?r=' + encodeURIComponent(routeId) + '&s=' + encodeURIComponent(stop.id);
-  btn.style.padding = '.8rem 1.0rem';
-  btn.style.borderRadius = '1.2rem';
-  right.appendChild(btn);
+
+  // Ver detalle
+  const view = makeEl('a','btn btn-ghost','Ver');
+  view.href = '#/parada?r=' + encodeURIComponent(routeId) + '&s=' + encodeURIComponent(stop.id);
+  right.appendChild(view);
 
   item.appendChild(img);
   item.appendChild(meta);
   item.appendChild(right);
+
   return item;
 }
+
 
 
 async function initRouteMap(el, data, routeId){
