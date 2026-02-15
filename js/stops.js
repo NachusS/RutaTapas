@@ -53,7 +53,7 @@ function saveFavorites(routeId, favs){
 function sortStops(stops){ return [...stops].sort((a,b)=> (a.order||0) - (b.order||0)); }
 
 export async function loadRouteStops(route){
-  const res = await fetch(route.file, { cache: 'no-store' });
+  const res = await fetch(new URL(route.file, document.baseURI).toString(), { cache: 'no-store' });
   if(!res.ok) throw new Error('No se pudo cargar ' + route.file);
   const data = await res.json();
   if(!data || !Array.isArray(data.stops)) throw new Error('Fichero de paradas inválido: ' + route.file);

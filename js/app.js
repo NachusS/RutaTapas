@@ -53,6 +53,31 @@ function requestGeolocationPermission(){
 
 function focusApp(){ const app = qs('#app'); if(app) app.focus(); }
 
+
+function renderFatalError(err){
+  const app = qs('#app');
+  if(!app) return;
+  app.replaceChildren();
+  const wrap = document.createElement('div');
+  wrap.className = 'container';
+  const card = document.createElement('section');
+  card.className = 'card pad';
+  const h = document.createElement('h1');
+  h.className = 'h1';
+  h.textContent = 'Ups… no se pudo cargar la pantalla';
+  const p = document.createElement('p');
+  p.className = 'p';
+  const msg = (err && err.message) ? err.message : String(err || 'Error desconocido');
+  p.textContent = 'Detalle: ' + msg;
+  const small = document.createElement('div');
+  small.className = 'small';
+  small.textContent = 'Sugerencia: revisa que existan /data/routes.json y los ficheros stops_*.json en GitHub Pages.';
+  card.appendChild(h); card.appendChild(p); card.appendChild(small);
+  wrap.appendChild(card);
+  app.appendChild(wrap);
+  console.error(err);
+}
+
 function parseHash(){
   const raw = window.location.hash || '#/';
   const clean = raw.startsWith('#') ? raw.slice(1) : raw;
@@ -90,6 +115,7 @@ function bindGlobal(){
 }
 
 async function route(){
+  try{
   const { path, query, raw } = parseHash();
   setWelcomeMode(path === '/' || path === '/welcome');
   setActiveNav(raw.startsWith('#/mapa') ? '#/mapa'
@@ -171,6 +197,9 @@ async function route(){
   }
 
   window.location.hash = '#/ruta';
+  }catch(e){
+    renderFatalError(e);
+  }
 }
 
 window.addEventListener('hashchange', route);

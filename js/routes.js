@@ -5,7 +5,7 @@ function makeEl(tag, cls, text){
   return el;
 }
 export async function loadRoutesIndex(){
-  const res = await fetch('data/routes.json', { cache: 'no-store' });
+  const res = await fetch(new URL('data/routes.json', document.baseURI).toString(), { cache: 'no-store' });
   if(!res.ok) throw new Error('No se pudo cargar data/routes.json');
   const data = await res.json();
   if(!data || !Array.isArray(data.routes)) throw new Error('routes.json inválido');
