@@ -186,6 +186,7 @@ function stopItem(routeId, stop, prog, favs){
     toggleBtn.setAttribute('aria-pressed', String(nowDone));
     toggleBtn.setAttribute('aria-label', nowDone ? 'Marcar como pendiente' : 'Marcar como hecha');
     updateProgressFromDOM(prog.completedStopIds.length);
+    window.dispatchEvent(new CustomEvent('rt:stopStatus', { detail: { stopId: stop.id, done: nowDone } }));
 
     if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
   });
@@ -272,9 +273,17 @@ async function initRouteMap(el, data, routeId){
     if(!stop || !stop.__marker) return;
     const wrap = document.createElement('div');
     wrap.style.maxWidth = '260px';
+    wrap.style.background = '#ffffff';
+    wrap.style.color = '#0f1724';
+    wrap.style.padding = '12px 12px 10px';
+    wrap.style.borderRadius = '14px';
+    wrap.style.boxShadow = '0 10px 30px rgba(0,0,0,.25)';
+    wrap.style.backdropFilter = 'none';
+    wrap.style.filter = 'none';
 
     const t = document.createElement('div');
     t.style.fontWeight = '900';
+    t.style.color = '#0f1724';
     t.style.marginBottom = '6px';
     t.textContent = stop.name || 'Parada';
     wrap.appendChild(t);
@@ -282,13 +291,15 @@ async function initRouteMap(el, data, routeId){
     if(stop.tapa){
       const s = document.createElement('div');
       s.style.fontSize = '12px';
+      s.style.color = '#0f1724';
       s.textContent = 'Tapa: ' + stop.tapa;
       wrap.appendChild(s);
     }
     if(stop.address){
       const a = document.createElement('div');
       a.style.fontSize = '12px';
-      a.style.opacity = '.8';
+      a.style.opacity = '1';
+      a.style.color = '#334155';
       a.textContent = stop.address;
       wrap.appendChild(a);
     }
@@ -297,6 +308,9 @@ async function initRouteMap(el, data, routeId){
   }
 
   // ===== Marcadores: inicio/fin + paradas (SIN chincheta) =====
+  const prog0 = getProgress(routeId);
+  const doneSet0 = new Set((prog0 && Array.isArray(prog0.completedStopIds)) ? prog0.completedStopIds : []);
+
   if(data && data.meta && data.meta.start){
     const p = { lat: data.meta.start.lat, lng: data.meta.start.lng };
     new window.google.maps.Marker({ position: p, map, icon: emojiIcon('🏁', 36) });
@@ -310,7 +324,8 @@ async function initRouteMap(el, data, routeId){
 
   stops.forEach((s)=>{
     const p = { lat: s.lat, lng: s.lng };
-    const mk = new window.google.maps.Marker({ position: p, map, icon: emojiIcon('📍', 32) });
+    const isDone0 = doneSet0.has(s.id);
+    const mk = new window.google.maps.Marker({ position: p, map, icon: emojiIcon(isDone0 ? '✅' : '📍', 32) });
     s.__marker = mk;
     mk.addListener('click', ()=> openStopPopup(s));
     bounds.extend(p);
@@ -455,11 +470,23 @@ async function initRouteMap(el, data, routeId){
   }
   window.addEventListener('rt:startRoute', onStart);
   window.addEventListener('rt:goToStop', onGoToStop);
+  function onStopStatus(e){
+    try{
+      const d = e && e.detail ? e.detail : null;
+      if(!d || !d.stopId) return;
+      const stop = stops.find(s => s.id === d.stopId);
+      if(stop && stop.__marker){
+        stop.__marker.setIcon(emojiIcon(d.done ? '✅' : '📍', 32));
+      }
+    }catch(_e){}
+  }
+  window.addEventListener('rt:stopStatus', onStopStatus);
 
   const obs2 = new MutationObserver(()=>{
     if(!document.body.contains(el)){
       window.removeEventListener('rt:startRoute', onStart);
       window.removeEventListener('rt:goToStop', onGoToStop);
+      window.removeEventListener('rt:stopStatus', onStopStatus);
       obs2.disconnect();
     }
   });
@@ -709,6 +736,7 @@ export function renderStopDetails(root, route, data, stopId){
     if(nowDone) prog.completedStopIds.push(stop.id);
     else prog.completedStopIds = prog.completedStopIds.filter(x => x !== stop.id);
     saveProgress(route.id, prog);
+    window.dispatchEvent(new CustomEvent('rt:stopStatus', { detail: { stopId: stop.id, done: nowDone } }));
     if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
     renderStopDetails(root, route, data, stop.id);
   });
