@@ -225,3 +225,91 @@ export function renderWelcome(root){
   container.appendChild(card);
   root.appendChild(container);
 }
+
+
+export function renderProfile(root){
+  root.replaceChildren();
+  const container = makeEl('div','container','');
+  const prof = ensureProfile(true);
+
+  const card = makeEl('section','card pad','');
+  card.appendChild(makeEl('h1','h1','Editar perfil'));
+
+  const row = makeEl('div','row','');
+  const img = document.createElement('img');
+  img.className = 'stop-photo';
+  img.style.height = '18rem';
+  img.alt = 'Foto de perfil';
+  img.src = prof.photoDataUrl ? prof.photoDataUrl : assetUrl(prof.avatar || 'assets/avatars/avatar_01.jpg');
+  row.appendChild(img);
+  card.appendChild(row);
+
+  const form = document.createElement('form');
+  form.noValidate = true;
+
+  const field = makeEl('div','field','');
+  const lab = makeEl('label','label','Nombre');
+  lab.setAttribute('for','inpName2');
+  const inp = document.createElement('input');
+  inp.id = 'inpName2';
+  inp.className = 'input';
+  inp.type = 'text';
+  inp.value = prof.name || '';
+  field.appendChild(lab);
+  field.appendChild(inp);
+
+  const inpPhoto = document.createElement('input');
+  inpPhoto.type = 'file';
+  inpPhoto.accept = 'image/*';
+  inpPhoto.className = 'hidden';
+  inpPhoto.id = 'inpPhoto2';
+
+  const btnPhoto = makeEl('label','btn','Cambiar foto');
+  btnPhoto.setAttribute('for','inpPhoto2');
+
+  inpPhoto.addEventListener('change', async ()=>{
+    const f = inpPhoto.files && inpPhoto.files[0] ? inpPhoto.files[0] : null;
+    if(!f) return;
+    try{
+      prof.photoDataUrl = await readFileAsDataURL(f);
+      saveProfile(prof);
+      img.src = prof.photoDataUrl;
+      if(window.RT_TOAST) window.RT_TOAST('Foto actualizada.');
+    }catch{
+      if(window.RT_TOAST) window.RT_TOAST('No se pudo cargar la foto.');
+    }
+  });
+
+  const btnSave = makeEl('button','btn btn-primary','Guardar');
+  btnSave.type = 'submit';
+
+  const btnBack = makeEl('a','btn btn-ghost','Volver');
+  btnBack.href = '#/mi-perfil';
+
+  form.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const name = inp.value.trim();
+    if(!name){
+      if(window.RT_TOAST) window.RT_TOAST('Por favor, escribe tu nombre.');
+      inp.focus();
+      return;
+    }
+    prof.name = name;
+    saveProfile(prof);
+    if(window.RT_TOAST) window.RT_TOAST('Perfil guardado.');
+    window.location.hash = '#/mi-perfil';
+  });
+
+  const actions = makeEl('div','row spread','');
+  actions.appendChild(btnBack);
+  actions.appendChild(btnPhoto);
+  actions.appendChild(btnSave);
+
+  form.appendChild(field);
+  form.appendChild(inpPhoto);
+  form.appendChild(actions);
+
+  card.appendChild(form);
+  container.appendChild(card);
+  root.appendChild(container);
+}
