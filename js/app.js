@@ -6,6 +6,13 @@ import { renderUserProfile } from './user_profile.js';
 
 const App = { state: { routesIndex: null, currentRoute: null, currentStops: null } };
 
+function lsGet(key){
+  try{ return localStorage.getItem(key); }catch(_e){ return null; }
+}
+function lsSet(key, value){
+  try{ localStorage.setItem(key, value); }catch(_e){}
+}
+
 function qs(sel, root=document){ return root.querySelector(sel); }
 
 function setWelcomeMode(isWelcome){
@@ -87,7 +94,18 @@ function parseHash(){
 
 async function initData(){
   if(!App.state.routesIndex) App.state.routesIndex = await loadRoutesIndex();
+
+  // Restaurar última ruta usada si existe
+  if(!App.state.currentRoute){
+    const lastId = lsGet('rt_last_route_id');
+    if(lastId){
+      const found = App.state.routesIndex.routes.find(r => r.id === lastId) || null;
+      if(found) App.state.currentRoute = found;
+    }
+  }
+
   if(!App.state.currentRoute) App.state.currentRoute = App.state.routesIndex.routes[0] || null;
+
   if(App.state.currentRoute && !App.state.currentStops){
     App.state.currentStops = await loadRouteStops(App.state.currentRoute);
   }
@@ -98,8 +116,14 @@ async function ensureRouteLoaded(routeId){
   const idx = App.state.routesIndex;
   const target = idx.routes.find(r => r.id === routeId) || idx.routes[0];
   if(!target) return;
+
+  // Guardar última ruta usada
+  lsSet('rt_last_route_id', target.id);
+
   if(!App.state.currentRoute || App.state.currentRoute.id !== target.id){
     App.state.currentRoute = target;
+    App.state.currentStops = await loadRouteStops(target);
+  }else if(!App.state.currentStops){
     App.state.currentStops = await loadRouteStops(target);
   }
 }
@@ -141,21 +165,24 @@ async function route(){
   if(path === '/seleccionar'){ renderSelectRoute(app, App.state.routesIndex, App.state.currentRoute); focusApp(); return; }
 
   if(path === '/ruta'){
-    const routeId = query.get('r') || (App.state.currentRoute ? App.state.currentRoute.id : null);
+    requestGeolocationPermission();
+    const routeId = query.get('r') || lsGet('rt_last_route_id') || (App.state.currentRoute ? App.state.currentRoute.id : null);
     if(routeId) await ensureRouteLoaded(routeId);
     renderActiveRoute(app, App.state.currentRoute, App.state.currentStops);
     focusApp(); return;
   }
 
   if(path === '/mapa'){
-    const routeId = query.get('r') || (App.state.currentRoute ? App.state.currentRoute.id : null);
+    requestGeolocationPermission();
+    const routeId = query.get('r') || lsGet('rt_last_route_id') || (App.state.currentRoute ? App.state.currentRoute.id : null);
     if(routeId) await ensureRouteLoaded(routeId);
     renderMapView(app, App.state.currentRoute, App.state.currentStops);
     focusApp(); return;
   }
 
   if(path === '/parada'){
-    const routeId = query.get('r') || (App.state.currentRoute ? App.state.currentRoute.id : null);
+    requestGeolocationPermission();
+    const routeId = query.get('r') || lsGet('rt_last_route_id') || (App.state.currentRoute ? App.state.currentRoute.id : null);
     const stopId = query.get('s') || '';
     if(routeId) await ensureRouteLoaded(routeId);
     renderStopDetails(app, App.state.currentRoute, App.state.currentStops, stopId);

@@ -165,7 +165,7 @@ export function renderWelcome(root){
       const next = { name, avatar: selectedAvatar, photoDataUrl: chosenPhotoDataUrl };
       saveProfile(next);
       if(window.RT_TOAST) window.RT_TOAST('Perfil creado.');
-      window.location.hash = '#/seleccionar';
+      window.location.hash = '#/ruta';
     });
 
     card.appendChild(photoWrap);
@@ -201,7 +201,7 @@ export function renderWelcome(root){
   const sub = makeEl('div','small welcome2-sub','tus tapas te están esperando.');
 
   const btn = makeEl('a','btn btn-primary btn-big','Continuar mi Ruta  🧭');
-  btn.href = '#/seleccionar';
+  btn.href = '#/ruta';
 
   const change = makeEl('div','small welcome2-change','¿No eres tú? ');
   const a = document.createElement('a');
