@@ -29,8 +29,9 @@ function saveProgress(routeId, prog){
 function resetProgress(routeId){
   try{ localStorage.removeItem(getProgressKey(routeId)); }catch(_e){}
 }
-function getNextStop(data, prog){
-  return nextStop(data, prog);
+function getNextStop(routeId, data, prog){
+  const stops = (data && Array.isArray(data.stops)) ? data.stops : [];
+  return nextStop(routeId, stops, prog);
 }
 function renderProgressUI(route, data, prog){
   const total = (data && Array.isArray(data.stops)) ? data.stops.length : 0;
@@ -372,7 +373,7 @@ async function initRouteMap(el, data, routeId){
 
   function getNextStopFromProg(){
     const prog = getProg();
-    return nextStop(data, prog);
+    return nextStop(routeId, stops, prog);
   }
 
   let routingEnabled = false;
@@ -519,7 +520,7 @@ export function renderActiveRoute(root, route, data){
   btnNext.type = 'button';
   btnNext.addEventListener('click', (e)=>{
     e.preventDefault();
-    const nextStop = getNextStop(data, prog);
+    const nextStop = getNextStop(route.id, data, prog);
     if(!nextStop){
       if(window.RT_TOAST) window.RT_TOAST('No hay más paradas pendientes.');
       return;
