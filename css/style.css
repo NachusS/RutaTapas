@@ -737,12 +737,14 @@ body.is-map-max{
   display: flex;
   gap: .3rem;
   margin-top: .6rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .star-btn--sm{
+  border-width: 1px;
+  min-width: 1.9rem;
   font-size: 1.3rem;
-  padding: .2rem .35rem;
-  border-radius: .8rem;
+  padding: .1rem .25rem;
+  border-radius: .6rem;
   line-height: 1;
 }
 
