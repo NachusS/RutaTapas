@@ -752,3 +752,21 @@ body.is-map-max{
 .jump-btn{
   font-size: 1.5rem;
 }
+
+/* Columna izquierda en tarjeta de parada */
+.stop-left{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .6rem;
+}
+.stop-thumb{
+  width: 6.2rem;
+  height: 6.2rem;
+  object-fit: cover;
+  border-radius: 1.8rem;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.fav-under{
+  margin-left: .4rem;
+}

@@ -146,26 +146,48 @@ function updateProgressFromDOM(done){
 
 function stopItem(routeId, stop, prog, favs){
   prog.completedStopIds = Array.isArray(prog.completedStopIds) ? prog.completedStopIds : [];
+  prog.stopRatings = (prog.stopRatings && typeof prog.stopRatings === 'object') ? prog.stopRatings : {};
   const done = prog.completedStopIds.includes(stop.id);
 
   const item = makeEl('div','item' + (done ? ' is-done' : ''),'');
   item.dataset.stopId = stop.id;
 
+  // Columna izquierda: foto + favorito debajo
+  const left = makeEl('div','stop-left','');
+
   const img = document.createElement('img');
   img.alt = 'Foto ' + (stop.name || 'parada');
   img.src = stop.photo || 'assets/images/ui/placeholder_stop.jpg';
-  img.style.width = '6.2rem';
-  img.style.height = '6.2rem';
-  img.style.objectFit = 'cover';
-  img.style.borderRadius = '1.8rem';
-  img.style.border = '1px solid rgba(255,255,255,.08)';
+  img.className = 'stop-thumb';
+  left.appendChild(img);
+
+  // Favorito debajo de la foto (izquierda)
+  const isFav = !!(favs && favs[stop.id]);
+  const favBtn = makeEl('button','fav-btn fav-under', isFav ? '♥' : '♡');
+  favBtn.type = 'button';
+  favBtn.setAttribute('aria-label', isFav ? 'Quitar de favoritos' : 'Marcar como favorito');
+  favBtn.setAttribute('aria-pressed', String(isFav));
+  favBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const now = !(favs && favs[stop.id]);
+    if(!favs) favs = {};
+    if(now) favs[stop.id] = true;
+    else delete favs[stop.id];
+    saveFavorites(routeId, favs);
+    favBtn.textContent = now ? '♥' : '♡';
+    favBtn.setAttribute('aria-pressed', String(now));
+    favBtn.setAttribute('aria-label', now ? 'Quitar de favoritos' : 'Marcar como favorito');
+    if(window.RT_TOAST) window.RT_TOAST(now ? 'Añadido a favoritos' : 'Quitado de favoritos');
+  });
+  left.appendChild(favBtn);
 
   const meta = makeEl('div','meta','');
   meta.appendChild(makeEl('div','title', (stop.order || '') + '. ' + (stop.name || 'Parada')));
   meta.appendChild(makeEl('div','sub', stop.tapa ? ('Tapa: ' + stop.tapa) : (stop.address || '')));
 
   // Valoración (5 estrellas, sin etiqueta)
-  const ratingVal = Number((prog.stopRatings && prog.stopRatings[stop.id]) || 0);
+  const ratingVal = Number(prog.stopRatings[stop.id] || 0);
   const stars = makeEl('div','stars stars--inline','');
   for(let i=1;i<=5;i++){
     const b = makeEl('button','star-btn star-btn--sm', i <= ratingVal ? '★' : '☆');
@@ -175,7 +197,6 @@ function stopItem(routeId, stop, prog, favs){
     b.addEventListener('click',(e)=>{
       e.preventDefault();
       e.stopPropagation();
-      prog.stopRatings = (prog.stopRatings && typeof prog.stopRatings === 'object') ? prog.stopRatings : {};
       prog.stopRatings[stop.id] = i;
       saveProgress(routeId, prog);
       try{
@@ -213,32 +234,12 @@ function stopItem(routeId, stop, prog, favs){
     toggleBtn.setAttribute('aria-pressed', String(nowDone));
     toggleBtn.setAttribute('aria-label', nowDone ? 'Marcar como pendiente' : 'Marcar como hecha');
     updateProgressFromDOM(prog.completedStopIds.length);
+
     window.dispatchEvent(new CustomEvent('rt:stopStatus', { detail: { stopId: stop.id, done: nowDone } }));
 
     if(window.RT_TOAST) window.RT_TOAST(nowDone ? 'Parada marcada como hecha' : 'Parada marcada como pendiente');
   });
   right.appendChild(toggleBtn);
-
-  // Favorito
-  const isFav = !!(favs && favs[stop.id]);
-  const favBtn = makeEl('button','fav-btn', isFav ? '♥' : '♡');
-  favBtn.type = 'button';
-  favBtn.setAttribute('aria-label', isFav ? 'Quitar de favoritos' : 'Marcar como favorito');
-  favBtn.setAttribute('aria-pressed', String(isFav));
-  favBtn.addEventListener('click', (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    const now = !(favs && favs[stop.id]);
-    if(!favs) favs = {};
-    if(now) favs[stop.id] = true;
-    else delete favs[stop.id];
-    saveFavorites(routeId, favs);
-    favBtn.textContent = now ? '♥' : '♡';
-    favBtn.setAttribute('aria-pressed', String(now));
-    favBtn.setAttribute('aria-label', now ? 'Quitar de favoritos' : 'Marcar como favorito');
-    if(window.RT_TOAST) window.RT_TOAST(now ? 'Añadido a favoritos' : 'Quitado de favoritos');
-  });
-  right.appendChild(favBtn);
 
   // Ir a esta parada (dibujar ruta desde mi posición)
   const jumpBtn = makeEl('button','fav-btn jump-btn','🧭');
@@ -259,7 +260,7 @@ function stopItem(routeId, stop, prog, favs){
   view.href = '#/parada?r=' + encodeURIComponent(routeId) + '&s=' + encodeURIComponent(stop.id);
   right.appendChild(view);
 
-  item.appendChild(img);
+  item.appendChild(left);
   item.appendChild(meta);
   item.appendChild(right);
 
