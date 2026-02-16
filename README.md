@@ -1,4 +1,4 @@
-# RutaTapas MultiRuta · v7.0.2
+# RutaTapas MultiRuta · v1.0.1 - ligth sin BBDD
 
 - Etiqueta **“Selecciona ruta:”** visible en escritorio, **y también en móvil** (debajo del progreso, junto al switch y los botones).
 - Carga robusta de `data/routes.json` (anticaché + multipath) con diagnóstico visual si falla.
