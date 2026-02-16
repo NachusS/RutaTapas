@@ -225,52 +225,63 @@ function stopItem(routeId, stop, prog, favs){
 
 
 async function initRouteMap(el, data, routeId){
-  // Mapa compacto en la pantalla de ruta
   if(!el) return;
   await loadGoogleMaps();
 
   const stops = (data && data.stops) ? data.stops : [];
-  const start = (data && data.meta && data.meta.start) ? { lat: data.meta.start.lat, lng: data.meta.start.lng }
-              : (stops[0] ? { lat: stops[0].lat, lng: stops[0].lng } : { lat: 37.17855, lng: -3.6036 });
+  const total = stops.length;
+
+  const startCenter = (data && data.meta && data.meta.start)
+    ? { lat: data.meta.start.lat, lng: data.meta.start.lng }
+    : (stops[0] ? { lat: stops[0].lat, lng: stops[0].lng } : { lat: 37.17855, lng: -3.6036 });
 
   const map = new window.google.maps.Map(el, {
-    center: start,
+    center: startCenter,
     zoom: 15,
     clickableIcons: false,
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
-    zoomControl: true,
-    styles: [
-      { elementType: "geometry", stylers: [{ color: "#0f1724" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#cfd7e3" }] },
-      { elementType: "labels.text.stroke", stylers: [{ color: "#0f1724" }] },
-      { featureType: "poi", stylers: [{ visibility: "off" }] },
-      { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a344a" }] },
-      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b1220" }] }
-    ]
+    zoomControl: true
   });
 
-  // Línea punteada entre paradas
-  if(stops.length >= 2){
-    const path = stops.map(s => ({ lat: s.lat, lng: s.lng }));
-    const line = new window.google.maps.Polyline({
-      path,
-      geodesic: true,
-      strokeOpacity: 0,
-      icons: [{
-        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
-        offset: '0',
-        repeat: '14px'
-      }]
-    });
-    line.setMap(map);
-  }
+  // Exponer para el botón maximizar (resize)
+  el.__rt_map = map;
 
-  // Marcadores
   const bounds = new window.google.maps.LatLngBounds();
 
-  // Inicio / Fin
+  // InfoWindow único
+  const info = new window.google.maps.InfoWindow();
+
+  function openStopPopup(stop){
+    if(!stop) return;
+    const wrap = document.createElement('div');
+    wrap.style.maxWidth = '240px';
+
+    const t = document.createElement('div');
+    t.style.fontWeight = '900';
+    t.style.marginBottom = '6px';
+    t.textContent = stop.name || 'Parada';
+    wrap.appendChild(t);
+
+    if(stop.tapa){
+      const s = document.createElement('div');
+      s.style.fontSize = '12px';
+      s.textContent = 'Tapa: ' + stop.tapa;
+      wrap.appendChild(s);
+    }
+    if(stop.address){
+      const a = document.createElement('div');
+      a.style.fontSize = '12px';
+      a.style.opacity = '.8';
+      a.textContent = stop.address;
+      wrap.appendChild(a);
+    }
+    info.setContent(wrap);
+    info.open({ map, anchor: stop.__marker });
+  }
+
+  // Marcadores: inicio/fin + paradas
   if(data && data.meta && data.meta.start){
     const p = { lat: data.meta.start.lat, lng: data.meta.start.lng };
     new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
@@ -284,7 +295,9 @@ async function initRouteMap(el, data, routeId){
 
   stops.forEach((s)=>{
     const p = { lat: s.lat, lng: s.lng };
-    new window.google.maps.Marker({ position: p, map, label: { text: '📍', fontSize: '16px' } });
+    const mk = new window.google.maps.Marker({ position: p, map, label: { text: '📍', fontSize: '16px' } });
+    s.__marker = mk;
+    mk.addListener('click', ()=> openStopPopup(s));
     bounds.extend(p);
   });
 
@@ -292,21 +305,80 @@ async function initRouteMap(el, data, routeId){
 
   // Mi posición (tracking)
   let userMarker = null;
+  let lastUserPos = null;
+
+  // Directions (a pie) + polyline punteada
+  const dirSvc = new window.google.maps.DirectionsService();
+  let dirRenderer = new window.google.maps.DirectionsRenderer({
+    suppressMarkers: true,
+    preserveViewport: true,
+    polylineOptions: {
+      strokeOpacity: 0,
+      icons: [{
+        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+        offset: '0',
+        repeat: '14px'
+      }]
+    }
+  });
+  dirRenderer.setMap(map);
+
+  function getProg(){
+    return getProgress(routeId);
+  }
+  function getNextStopFromProg(){
+    const prog = getProg();
+    return nextStop(data, prog);
+  }
+
+  let lastRoutedStopId = null;
+  let routingEnabled = false;
+  let routeThrottle = 0;
+
+  async function routeToStop(stop){
+    if(!stop || !lastUserPos) return;
+    lastRoutedStopId = stop.id;
+
+    dirSvc.route({
+      origin: lastUserPos,
+      destination: { lat: stop.lat, lng: stop.lng },
+      travelMode: window.google.maps.TravelMode.WALKING
+    }, (result, status)=>{
+      if(status === 'OK' && result){
+        dirRenderer.setDirections(result);
+        openStopPopup(stop);
+      }
+    });
+  }
+
+  function maybeAutoRoute(){
+    if(!routingEnabled) return;
+    const stop = getNextStopFromProg();
+    if(!stop) return;
+    // si cambia la parada objetivo, recalcula siempre
+    const now = Date.now();
+    if(stop.id !== lastRoutedStopId || (now - routeThrottle) > 2500){
+      routeThrottle = now;
+      routeToStop(stop);
+    }
+  }
+
   if('geolocation' in navigator){
     const watchId = navigator.geolocation.watchPosition((pos)=>{
-      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      lastUserPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       if(!userMarker){
         userMarker = new window.google.maps.Marker({
-          position: p,
+          position: lastUserPos,
           map,
           label: { text: '👤', fontSize: '16px' }
         });
       }else{
-        userMarker.setPosition(p);
+        userMarker.setPosition(lastUserPos);
       }
+      maybeAutoRoute();
     }, ()=>{}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
 
-    // Limpieza al navegar: si el contenedor desaparece, paramos el watch
+    // Cleanup si navegas y el nodo desaparece
     const obs = new MutationObserver(()=>{
       if(!document.body.contains(el)){
         try{ navigator.geolocation.clearWatch(watchId); }catch(_e){}
@@ -315,7 +387,33 @@ async function initRouteMap(el, data, routeId){
     });
     obs.observe(document.body, { childList:true, subtree:true });
   }
+
+  // Eventos desde la UI (Comenzar / Siguiente)
+  // El renderActiveRoute despacha estos eventos.
+  function onStart(){
+    routingEnabled = true;
+    lastRoutedStopId = null;
+    maybeAutoRoute();
+  }
+  function onNext(){
+    routingEnabled = true;
+    lastRoutedStopId = null;
+    maybeAutoRoute();
+  }
+  window.addEventListener('rt:startRoute', onStart);
+  window.addEventListener('rt:nextStop', onNext);
+
+  // Cleanup listeners si se destruye el mapa
+  const obs2 = new MutationObserver(()=>{
+    if(!document.body.contains(el)){
+      window.removeEventListener('rt:startRoute', onStart);
+      window.removeEventListener('rt:nextStop', onNext);
+      obs2.disconnect();
+    }
+  });
+  obs2.observe(document.body, { childList:true, subtree:true });
 }
+
 
 export function renderActiveRoute(root, route, data){
   root.replaceChildren();
@@ -367,6 +465,7 @@ export function renderActiveRoute(root, route, data){
       saveProgress(route.id, prog);
       if(window.RT_TOAST) window.RT_TOAST('Ruta iniciada.');
     }
+    window.dispatchEvent(new Event('rt:startRoute'));
     renderActiveRoute(root, route, data);
   });
 
@@ -379,6 +478,7 @@ export function renderActiveRoute(root, route, data){
       if(window.RT_TOAST) window.RT_TOAST('No hay más paradas pendientes.');
       return;
     }
+    window.dispatchEvent(new Event('rt:nextStop'));
     window.location.hash = '#/parada?r=' + encodeURIComponent(route.id) + '&s=' + encodeURIComponent(nextStop.id);
   });
 
@@ -401,6 +501,19 @@ export function renderActiveRoute(root, route, data){
   const mapTitleRow = makeEl('div','row spread','');
   mapTitleRow.appendChild(makeEl('h2','h2','Mapa y seguimiento'));
   mapTitleRow.appendChild(makeEl('div','small','Activa la ubicación para ver tu posición.'));
+  const btnMax = makeEl('button','btn btn-ghost','Maximizar');
+  btnMax.type = 'button';
+  btnMax.addEventListener('click',(e)=>{
+    e.preventDefault();
+    mapCard.classList.toggle('is-max');
+    document.body.classList.toggle('is-map-max', mapCard.classList.contains('is-max'));
+    btnMax.textContent = mapCard.classList.contains('is-max') ? 'Cerrar' : 'Maximizar';
+    setTimeout(()=>{
+      const m = mapBox.__rt_map;
+      if(m){ window.google.maps.event.trigger(m,'resize'); }
+    }, 220);
+  });
+  mapTitleRow.appendChild(btnMax);
   mapCard.appendChild(mapTitleRow);
 
   const mapBox = makeEl('div','mapbox','');

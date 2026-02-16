@@ -672,3 +672,19 @@ body.is-welcome .container{
   position: relative;
   z-index: 2;
 }
+
+/* ===== Mapa maximizado ===== */
+body.is-map-max{
+  overflow: hidden;
+}
+.route-map-card.is-max{
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  margin: 0;
+  border-radius: 0;
+  padding: 1.2rem;
+}
+.route-map-card.is-max .mapbox{
+  height: calc(100vh - 8.2rem);
+}

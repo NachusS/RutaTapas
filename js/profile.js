@@ -36,6 +36,10 @@ export function renderWelcome(root){
     const form = document.createElement('form');
     form.noValidate = true;
 
+    function assetUrl(p){
+      try{ return new URL(p, document.baseURI).toString(); }catch(_e){ return p; }
+    }
+
     // Foto
     const photoWrap = makeEl('div','photo-uploader','');
     const photoBtn = makeEl('label','photo-btn','');
@@ -60,15 +64,16 @@ export function renderWelcome(root){
     const avatarTitle = makeEl('div','avatar-title','o elige un avatar');
     const avatars = makeEl('div','avatar-row','');
     const avatarFiles = [
-      'assets/avatars/avatar_01.jpg',
-      'assets/avatars/avatar_02.jpg',
-      'assets/avatars/avatar_03.jpg',
-      'assets/avatars/avatar_04.jpg',
-      // fallback (estructura antigua)
+      // estructura actual del proyecto
       'assets/images/avatares/avatar_01.jpg',
       'assets/images/avatares/avatar_02.jpg',
       'assets/images/avatares/avatar_03.jpg',
-      'assets/images/avatares/avatar_04.jpg'
+      'assets/images/avatares/avatar_04.jpg',
+      // alternativa (si algún día se usa assets/avatars)
+      'assets/avatars/avatar_01.jpg',
+      'assets/avatars/avatar_02.jpg',
+      'assets/avatars/avatar_03.jpg',
+      'assets/avatars/avatar_04.jpg'
     ];
 
     let selectedAvatar = avatarFiles[0];
@@ -77,12 +82,12 @@ export function renderWelcome(root){
     const preview = document.createElement('img');
     preview.className = 'photo-preview';
     preview.alt = 'Vista previa';
-    preview.src = selectedAvatar;
+    preview.src = assetUrl(selectedAvatar);
     preview.addEventListener('error', ()=>{
       try{
         const idx = Number((selectedAvatar.match(/avatar_(\d+)/)||[])[1]||'1');
-        const fb = 'assets/images/avatares/avatar_0' + String(idx).padStart(2,'0') + '.jpg';
-        preview.src = fb;
+        const fb = 'assets/images/avatares/avatar_' + String(idx).padStart(2,'0') + '.jpg';
+        preview.src = assetUrl(fb);
         selectedAvatar = fb;
       }catch(_e){}
     });
@@ -97,7 +102,7 @@ export function renderWelcome(root){
         b.classList.toggle('is-selected', b.getAttribute('data-src') === path);
       });
       if(!chosenPhotoDataUrl){
-        setPreview(path);
+        setPreview(assetUrl(path));
       }
     }
 
@@ -111,12 +116,12 @@ export function renderWelcome(root){
       b.setAttribute('data-src', src);
       b.setAttribute('aria-label', 'Seleccionar avatar ' + (idx+1));
       const img = document.createElement('img');
-      img.src = src;
+      img.src = assetUrl(src);
       img.alt = 'Avatar ' + (idx+1);
       img.addEventListener('error', ()=>{
         for(const fb of avatarFallbacks){
           if(fb.endsWith('avatar_0' + (idx+1) + '.jpg')){
-            img.src = fb;
+            img.src = assetUrl(fb);
             b.setAttribute('data-src', fb);
             if(idx===0) selectedAvatar = fb;
             break;
@@ -173,7 +178,7 @@ export function renderWelcome(root){
       const next = { name, avatar: selectedAvatar, photoDataUrl: chosenPhotoDataUrl };
       saveProfile(next);
       if(window.RT_TOAST) window.RT_TOAST('Perfil creado.');
-      window.location.hash = '#/ruta';
+      window.location.hash = '#/seleccionar';
     });
 
     card.appendChild(icon);
@@ -197,7 +202,7 @@ export function renderWelcome(root){
   const card = makeEl('section','card pad welcome2-card','');
 
   const top = makeEl('div','welcome2-top','');
-  const t1 = makeEl('div','welcome2-title','RutaTapas v1.0');
+  const t1 = makeEl('div','welcome2-title','RutaTapas v2.0');
   const t2 = makeEl('div','welcome2-handle','@' + prof.name);
   top.appendChild(t1); top.appendChild(t2);
 
