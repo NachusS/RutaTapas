@@ -402,9 +402,17 @@ async function initRouteMap(el, data, routeId){
   const dottedBlue = {
     strokeOpacity: 0,
     icons: [{
-      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4, strokeColor: '#1a73e8' },
+      // Puntos azules (sin trazos)
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 3.2,
+        fillOpacity: 1,
+        fillColor: '#1a73e8',
+        strokeOpacity: 1,
+        strokeColor: '#1a73e8'
+      },
       offset: '0',
-      repeat: '12px'
+      repeat: '14px'
     }]
   };
 
