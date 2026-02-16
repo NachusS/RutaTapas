@@ -3,13 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <base href="/RutaTapas/">
+  <base href="./">
   <title>RutaTapas v2.0</title>
   <meta name="description" content="App web para rutas de tapas multiciudad." />
   <meta name="rt-app-version" content="v2.0">
   <!-- Google Maps API Key (restringe por HTTP referrer a https://nachuss.github.io/RutaTapas/*) -->
   <meta name="rt-gmaps-key" content="AIzaSyBlwBJfv7Fa2cVvb_gWIjBCr8Jya6RKpaU">
   <link rel="stylesheet" href="css/style.css" />
+
+  <script id="rt-trailing-slash">
+    (function(){
+      try{
+        var p = window.location.pathname || '';
+        var last = p.split('/').pop() || '';
+        if(p && !p.endsWith('/') && last.indexOf('.') === -1){
+          window.location.replace(p + '/' + window.location.search + window.location.hash);
+        }
+      }catch(e){}
+    })();
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#app">Saltar al contenido</a>
@@ -26,7 +38,14 @@
 </div>
   </header>
 
-  <main id="app" class="app-main" role="main" tabindex="-1"></main>
+  <main id="app" class="app-main" role="main" tabindex="-1">
+  <div class="container" id="boot-fallback">
+    <section class="card pad">
+      <h1 class="h1">Cargando…</h1>
+      <p class="p">Si esta pantalla no desaparece, revisa la consola del navegador (F12) para ver el error.</p>
+    </section>
+  </div>
+</main>
 
     <footer class="bottom-nav" role="contentinfo">
     <nav class="bottom-nav__inner container" aria-label="Navegación inferior">

@@ -204,6 +204,9 @@ async function route(){
 
 window.addEventListener('hashchange', route);
 window.addEventListener('DOMContentLoaded', async ()=>{
+  const bf = document.getElementById('boot-fallback');
+  if(bf) bf.remove();
+
   requestGeolocationPermission();
   bindGlobal();
   if(!window.location.hash) window.location.hash = '#/welcome';
