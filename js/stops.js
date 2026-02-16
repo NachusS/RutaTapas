@@ -295,6 +295,17 @@ async function initRouteMap(el, data, routeId){
   const bounds = new window.google.maps.LatLngBounds();
   const info = new window.google.maps.InfoWindow();
 
+  // Si el usuario cierra el popup de una parada, no lo reabrimos automáticamente
+  // hasta que pulse "Siguiente" o "Ir a parada".
+  let lastPopupStopId = null;
+  let dismissedPopupStopId = null;
+  try{
+    info.addListener('closeclick', ()=>{
+      dismissedPopupStopId = lastPopupStopId;
+    });
+  }catch(_e){}
+
+
   function emojiIcon(emoji, size){
     const s = Number(size || 34);
     const svg = [
@@ -311,8 +322,11 @@ async function initRouteMap(el, data, routeId){
     };
   }
 
-  function openStopPopup(stop){
+  function openStopPopup(stop, force){
     if(!stop || !stop.__marker) return;
+    const stopId = stop.id || null;
+    if(!force && stopId && dismissedPopupStopId === stopId) return;
+    lastPopupStopId = stopId;
     const wrap = document.createElement('div');
     wrap.style.maxWidth = '260px';
     wrap.style.background = '#ffffff';
@@ -369,7 +383,7 @@ async function initRouteMap(el, data, routeId){
     const isDone0 = doneSet0.has(s.id);
     const mk = new window.google.maps.Marker({ position: p, map, icon: emojiIcon(isDone0 ? '✅' : '📍', 32) });
     s.__marker = mk;
-    mk.addListener('click', ()=> openStopPopup(s));
+    mk.addListener('click', ()=> openStopPopup(s, true));
     bounds.extend(p);
   });
 
@@ -456,7 +470,7 @@ async function initRouteMap(el, data, routeId){
     // Guardar objetivo aunque aún no haya GPS (así se dibuja cuando llegue)
     pendingStop = stop;
     if(!lastUserPos){
-      try{ openStopPopup(stop); }catch(_e){}
+      try{ openStopPopup(stop, false); }catch(_e){}
       return;
     }
 
@@ -467,7 +481,7 @@ async function initRouteMap(el, data, routeId){
     }, (result, status)=>{
       if(status === 'OK' && result){
         userRouteRenderer.setDirections(result);
-        openStopPopup(stop);
+        openStopPopup(stop, false);
       }
     });
   }
@@ -507,10 +521,12 @@ async function initRouteMap(el, data, routeId){
 
   // Eventos desde UI: comenzar / siguiente (sin re-render)
   function onStart(){
+    dismissedPopupStopId = null;
     const target = getNextStopFromProg();
     if(target) routeUserToStop(target);
   }
   function onGoToStop(e){
+    dismissedPopupStopId = null;
     const stopId = e && e.detail ? e.detail.stopId : null;
     const target = stopId ? stops.find(s => s.id === stopId) : getNextStopFromProg();
     if(target) routeUserToStop(target);
@@ -539,6 +555,7 @@ async function initRouteMap(el, data, routeId){
   });
   obs2.observe(document.body, { childList:true, subtree:true });
 }
+
 
 
 
