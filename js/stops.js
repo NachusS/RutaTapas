@@ -149,6 +149,7 @@ function stopItem(routeId, stop, prog, favs){
   const done = prog.completedStopIds.includes(stop.id);
 
   const item = makeEl('div','item' + (done ? ' is-done' : ''),'');
+  item.dataset.stopId = stop.id;
 
   const img = document.createElement('img');
   img.alt = 'Foto ' + (stop.name || 'parada');
@@ -230,7 +231,6 @@ async function initRouteMap(el, data, routeId){
   await loadGoogleMaps();
 
   const stops = (data && Array.isArray(data.stops)) ? data.stops.slice().sort((a,b)=> (a.order||0)-(b.order||0)) : [];
-  const total = stops.length;
 
   const startCenter = (data && data.meta && data.meta.start)
     ? { lat: data.meta.start.lat, lng: data.meta.start.lng }
@@ -251,6 +251,22 @@ async function initRouteMap(el, data, routeId){
 
   const bounds = new window.google.maps.LatLngBounds();
   const info = new window.google.maps.InfoWindow();
+
+  function emojiIcon(emoji, size){
+    const s = Number(size || 34);
+    const svg = [
+      '<svg xmlns="http://www.w3.org/2000/svg" width="', s, '" height="', s, '" viewBox="0 0 ', s, ' ', s, '">',
+      '<text x="50%" y="56%" text-anchor="middle" dominant-baseline="middle" font-size="', Math.round(s*0.72), '">',
+      emoji,
+      '</text></svg>'
+    ].join('');
+    const url = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    return {
+      url,
+      scaledSize: new window.google.maps.Size(s, s),
+      anchor: new window.google.maps.Point(s/2, s/2)
+    };
+  }
 
   function openStopPopup(stop){
     if(!stop || !stop.__marker) return;
@@ -280,21 +296,21 @@ async function initRouteMap(el, data, routeId){
     info.open({ map, anchor: stop.__marker });
   }
 
-  // ===== Marcadores: inicio/fin + paradas =====
+  // ===== Marcadores: inicio/fin + paradas (SIN chincheta) =====
   if(data && data.meta && data.meta.start){
     const p = { lat: data.meta.start.lat, lng: data.meta.start.lng };
-    new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
+    new window.google.maps.Marker({ position: p, map, icon: emojiIcon('🏁', 36) });
     bounds.extend(p);
   }
   if(data && data.meta && data.meta.end){
     const p = { lat: data.meta.end.lat, lng: data.meta.end.lng };
-    new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
+    new window.google.maps.Marker({ position: p, map, icon: emojiIcon('🏁', 36) });
     bounds.extend(p);
   }
 
   stops.forEach((s)=>{
     const p = { lat: s.lat, lng: s.lng };
-    const mk = new window.google.maps.Marker({ position: p, map, label: { text: '📍', fontSize: '16px' } });
+    const mk = new window.google.maps.Marker({ position: p, map, icon: emojiIcon('📍', 32) });
     s.__marker = mk;
     mk.addListener('click', ()=> openStopPopup(s));
     bounds.extend(p);
@@ -302,87 +318,85 @@ async function initRouteMap(el, data, routeId){
 
   if(!bounds.isEmpty()) map.fitBounds(bounds, 64);
 
-  // ===== RUTA COMPLETA (Inicio -> Fin pasando por paradas) =====
   const dirSvc = new window.google.maps.DirectionsService();
 
-  const dottedPolyline = {
+  const dottedGrey = {
     strokeOpacity: 0,
     icons: [{
-      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4, strokeColor: '#64748b' },
       offset: '0',
       repeat: '14px'
     }]
   };
+  const dottedBlue = {
+    strokeOpacity: 0,
+    icons: [{
+      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4, strokeColor: '#1a73e8' },
+      offset: '0',
+      repeat: '12px'
+    }]
+  };
 
+  // ===== RUTA COMPLETA (paradas en orden) punteada =====
   const fullRouteRenderer = new window.google.maps.DirectionsRenderer({
     suppressMarkers: true,
     preserveViewport: true,
-    polylineOptions: dottedPolyline
+    polylineOptions: dottedGrey
   });
   fullRouteRenderer.setMap(map);
 
-  async function drawFullRoute(){
+  function drawFullRoute(){
     if(stops.length < 2) return;
-
     const origin = { lat: stops[0].lat, lng: stops[0].lng };
     const destination = { lat: stops[stops.length-1].lat, lng: stops[stops.length-1].lng };
     const waypoints = stops.slice(1, -1).map(s => ({ location: { lat: s.lat, lng: s.lng }, stopover: true }));
-
     dirSvc.route({
-      origin,
-      destination,
-      waypoints,
+      origin, destination, waypoints,
       optimizeWaypoints: false,
       travelMode: window.google.maps.TravelMode.WALKING
     }, (result, status)=>{
       if(status === 'OK' && result){
         fullRouteRenderer.setDirections(result);
-      }
-      // Si falla por límites o cualquier cosa, fallback a línea directa punteada
-      if(status !== 'OK'){
+      }else{
+        // Fallback: línea directa punteada por coordenadas
         try{
           const path = stops.map(s => ({ lat: s.lat, lng: s.lng }));
           const line = new window.google.maps.Polyline({
             path,
             geodesic: true,
             strokeOpacity: 0,
-            icons: dottedPolyline.icons
+            icons: dottedGrey.icons
           });
           line.setMap(map);
         }catch(_e){}
       }
     });
   }
-
   drawFullRoute();
 
-  // ===== Mi posición + ruta a la siguiente parada =====
+  // ===== Mi posición + ruta a la siguiente parada (azul) =====
   let userMarker = null;
   let lastUserPos = null;
+  let pendingStop = null;
 
   const userRouteRenderer = new window.google.maps.DirectionsRenderer({
     suppressMarkers: true,
     preserveViewport: true,
-    polylineOptions: dottedPolyline
+    polylineOptions: dottedBlue
   });
   userRouteRenderer.setMap(map);
 
   function getProg(){
     return getProgress(routeId);
   }
-
   function getNextStopFromProg(){
     const prog = getProg();
     return nextStop(routeId, stops, prog);
   }
 
-  let routingEnabled = false;
-  let lastRoutedStopId = null;
-  let routeThrottle = 0;
-
   function routeUserToStop(stop){
     if(!stop || !lastUserPos) return;
-    lastRoutedStopId = stop.id;
+    pendingStop = stop;
 
     dirSvc.route({
       origin: lastUserPos,
@@ -396,20 +410,12 @@ async function initRouteMap(el, data, routeId){
     });
   }
 
-  function maybeAutoRoute(){
+  function ensureUserRoute(){
     const prog = getProg();
-    // si ya se había comenzado anteriormente, se considera activa
-    if(prog && prog.startedAt) routingEnabled = true;
-    if(!routingEnabled) return;
-
-    const stop = getNextStopFromProg();
-    if(!stop) return;
-
-    const now = Date.now();
-    if(stop.id !== lastRoutedStopId || (now - routeThrottle) > 2500){
-      routeThrottle = now;
-      routeUserToStop(stop);
-    }
+    // Auto-activar si ya se empezó antes
+    const started = !!(prog && prog.startedAt);
+    const target = pendingStop || getNextStopFromProg();
+    if(started && target) routeUserToStop(target);
   }
 
   if('geolocation' in navigator){
@@ -419,13 +425,14 @@ async function initRouteMap(el, data, routeId){
         userMarker = new window.google.maps.Marker({
           position: lastUserPos,
           map,
-          label: { text: '👤', fontSize: '16px' }
+          icon: emojiIcon('👤', 30)
         });
       }else{
         userMarker.setPosition(lastUserPos);
       }
-      maybeAutoRoute();
-    }, ()=>{}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
+      // si ya estaba empezada, dibuja ruta
+      ensureUserRoute();
+    }, ()=>{}, { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 });
 
     const obs = new MutationObserver(()=>{
       if(!document.body.contains(el)){
@@ -436,29 +443,29 @@ async function initRouteMap(el, data, routeId){
     obs.observe(document.body, { childList:true, subtree:true });
   }
 
-  // Eventos desde UI
+  // Eventos desde UI: comenzar / siguiente (sin re-render)
   function onStart(){
-    routingEnabled = true;
-    lastRoutedStopId = null;
-    maybeAutoRoute();
+    const target = getNextStopFromProg();
+    if(target) routeUserToStop(target);
   }
-  function onNext(){
-    routingEnabled = true;
-    lastRoutedStopId = null;
-    maybeAutoRoute();
+  function onGoToStop(e){
+    const stopId = e && e.detail ? e.detail.stopId : null;
+    const target = stopId ? stops.find(s => s.id === stopId) : getNextStopFromProg();
+    if(target) routeUserToStop(target);
   }
   window.addEventListener('rt:startRoute', onStart);
-  window.addEventListener('rt:nextStop', onNext);
+  window.addEventListener('rt:goToStop', onGoToStop);
 
   const obs2 = new MutationObserver(()=>{
     if(!document.body.contains(el)){
       window.removeEventListener('rt:startRoute', onStart);
-      window.removeEventListener('rt:nextStop', onNext);
+      window.removeEventListener('rt:goToStop', onGoToStop);
       obs2.disconnect();
     }
   });
   obs2.observe(document.body, { childList:true, subtree:true });
 }
+
 
 
 
@@ -504,6 +511,7 @@ export function renderActiveRoute(root, route, data){
   const actions = makeEl('div','actions-row','');
 
   const btnStart = makeEl('button','btn btn-primary','Comenzar');
+  if(prog.startedAt) btnStart.disabled = true;
   btnStart.type = 'button';
   btnStart.addEventListener('click', (e)=>{
     e.preventDefault();
@@ -512,21 +520,28 @@ export function renderActiveRoute(root, route, data){
       saveProgress(route.id, prog);
       if(window.RT_TOAST) window.RT_TOAST('Ruta iniciada.');
     }
+    btnStart.disabled = true;
     window.dispatchEvent(new Event('rt:startRoute'));
-    renderActiveRoute(root, route, data);
   });
 
   const btnNext = makeEl('button','btn','Siguiente');
   btnNext.type = 'button';
   btnNext.addEventListener('click', (e)=>{
     e.preventDefault();
-    const nextStop = getNextStop(route.id, data, prog);
-    if(!nextStop){
+    const target = getNextStop(route.id, data, prog);
+    if(!target){
       if(window.RT_TOAST) window.RT_TOAST('No hay más paradas pendientes.');
       return;
     }
-    window.dispatchEvent(new Event('rt:nextStop'));
-    window.location.hash = '#/parada?r=' + encodeURIComponent(route.id) + '&s=' + encodeURIComponent(nextStop.id);
+    // Enviar al mapa la parada objetivo
+    window.dispatchEvent(new CustomEvent('rt:goToStop', { detail: { stopId: target.id } }));
+    // Scroll al listado
+    const elStop = document.querySelector('[data-stop-id="' + CSS.escape(target.id) + '"]');
+    if(elStop){
+      elStop.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      elStop.classList.add('pulse');
+      setTimeout(()=>{ try{ elStop.classList.remove('pulse'); }catch(_e){} }, 900);
+    }
   });
 
   const btnReset = makeEl('button','btn btn-danger','Reiniciar');

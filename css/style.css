@@ -688,3 +688,9 @@ body.is-map-max{
 .route-map-card.is-max .mapbox{
   height: calc(100vh - 8.2rem);
 }
+
+/* Highlight al ir a la siguiente parada */
+.pulse{
+  outline: 2px solid rgba(26,115,232,.55);
+  box-shadow: 0 0 0 6px rgba(26,115,232,.12);
+}
