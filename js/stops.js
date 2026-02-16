@@ -804,6 +804,24 @@ export function renderStopDetails(root, route, data, stopId){
   actions.appendChild(doneBtn);
   actions.appendChild(favBtn);
 
+  // Web del local
+  const webBtn = document.createElement('a');
+  webBtn.className = 'btn btn-ghost btn-web';
+  webBtn.setAttribute('aria-label','Abrir web del local');
+  webBtn.textContent = '🌐';
+  const hasWeb = !!(stop.web && String(stop.web).trim());
+  if(hasWeb){
+    webBtn.href = String(stop.web).trim();
+    webBtn.target = '_blank';
+    webBtn.rel = 'noopener noreferrer';
+  }else{
+    webBtn.href = '#';
+    webBtn.classList.add('is-disabled');
+    webBtn.setAttribute('aria-disabled','true');
+    webBtn.addEventListener('click',(e)=>{ e.preventDefault(); });
+  }
+  actions.appendChild(webBtn);
+
   // Rating: 5 estrellas
   const ratingWrap = makeEl('div','rating-wrap','');
   const ratingTitle = makeEl('div','label','Valora esta parada');
