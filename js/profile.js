@@ -60,6 +60,11 @@ export function renderWelcome(root){
     const avatarTitle = makeEl('div','avatar-title','o elige un avatar');
     const avatars = makeEl('div','avatar-row','');
     const avatarFiles = [
+      'assets/avatars/avatar_01.jpg',
+      'assets/avatars/avatar_02.jpg',
+      'assets/avatars/avatar_03.jpg',
+      'assets/avatars/avatar_04.jpg',
+      // fallback (estructura antigua)
       'assets/images/avatares/avatar_01.jpg',
       'assets/images/avatares/avatar_02.jpg',
       'assets/images/avatares/avatar_03.jpg',
@@ -67,14 +72,39 @@ export function renderWelcome(root){
     ];
 
     let selectedAvatar = avatarFiles[0];
+
+    // Vista previa (foto o avatar)
+    const preview = document.createElement('img');
+    preview.className = 'photo-preview';
+    preview.alt = 'Vista previa';
+    preview.src = selectedAvatar;
+    preview.addEventListener('error', ()=>{
+      try{
+        const idx = Number((selectedAvatar.match(/avatar_(\d+)/)||[])[1]||'1');
+        const fb = 'assets/images/avatares/avatar_0' + String(idx).padStart(2,'0') + '.jpg';
+        preview.src = fb;
+        selectedAvatar = fb;
+      }catch(_e){}
+    });
+    photoWrap.appendChild(preview);
+
+    function setPreview(src){
+      preview.src = src;
+    }
     function selectAvatar(path){
       selectedAvatar = path;
       avatars.querySelectorAll('button').forEach(b=>{
         b.classList.toggle('is-selected', b.getAttribute('data-src') === path);
       });
+      if(!chosenPhotoDataUrl){
+        setPreview(path);
+      }
     }
 
-    avatarFiles.forEach((src, idx)=>{
+    const avatarChoices = avatarFiles.slice(0,4);
+    const avatarFallbacks = avatarFiles.slice(4);
+
+    avatarChoices.forEach((src, idx)=>{
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'avatar-btn' + (idx===0 ? ' is-selected' : '');
@@ -83,8 +113,20 @@ export function renderWelcome(root){
       const img = document.createElement('img');
       img.src = src;
       img.alt = 'Avatar ' + (idx+1);
+      img.addEventListener('error', ()=>{
+        for(const fb of avatarFallbacks){
+          if(fb.endsWith('avatar_0' + (idx+1) + '.jpg')){
+            img.src = fb;
+            b.setAttribute('data-src', fb);
+            if(idx===0) selectedAvatar = fb;
+            break;
+          }
+        }
+      });
       b.appendChild(img);
-      b.addEventListener('click', (e)=>{ e.preventDefault(); selectAvatar(src); });
+      b.addEventListener('click', (e)=>{ e.preventDefault(); selectAvatar(b.getAttribute('data-src')); });
+      avatars.appendChild(b);
+    });
       avatars.appendChild(b);
     });
 
@@ -114,6 +156,7 @@ export function renderWelcome(root){
         chosenPhotoDataUrl = await readFileAsDataURL(f);
         cam.textContent = '✅';
         txt.textContent = 'Foto lista';
+        setPreview(chosenPhotoDataUrl);
       }catch{
         chosenPhotoDataUrl = '';
       }

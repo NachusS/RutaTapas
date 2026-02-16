@@ -653,3 +653,22 @@ body.is-welcome .container{
   border-radius: 1.6rem !important;
   white-space: nowrap;
 }
+
+/* Vista previa en pantalla de creación de perfil */
+.photo-uploader{
+  overflow: hidden;
+}
+.photo-preview{
+  position:absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
+  opacity: .92;
+  z-index: 1;
+}
+.photo-btn, .photo-plus{
+  position: relative;
+  z-index: 2;
+}
