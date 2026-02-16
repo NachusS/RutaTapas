@@ -240,6 +240,20 @@ function stopItem(routeId, stop, prog, favs){
   });
   right.appendChild(favBtn);
 
+  // Ir a esta parada (dibujar ruta desde mi posición)
+  const jumpBtn = makeEl('button','fav-btn jump-btn','🧭');
+  jumpBtn.type = 'button';
+  jumpBtn.setAttribute('aria-label','Ir a esta parada');
+  jumpBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent('rt:goToStop', { detail: { stopId: stop.id } }));
+    const mapCard = document.querySelector('.route-map-card');
+    if(mapCard) mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if(window.RT_TOAST) window.RT_TOAST('Ruta hacia: ' + (stop.name || 'parada'));
+  });
+  right.appendChild(jumpBtn);
+
   // Ver detalle
   const view = makeEl('a','btn btn-ghost','Ver');
   view.href = '#/parada?r=' + encodeURIComponent(routeId) + '&s=' + encodeURIComponent(stop.id);
@@ -437,8 +451,13 @@ async function initRouteMap(el, data, routeId){
   }
 
   function routeUserToStop(stop){
-    if(!stop || !lastUserPos) return;
+    if(!stop) return;
+    // Guardar objetivo aunque aún no haya GPS (así se dibuja cuando llegue)
     pendingStop = stop;
+    if(!lastUserPos){
+      try{ openStopPopup(stop); }catch(_e){}
+      return;
+    }
 
     dirSvc.route({
       origin: lastUserPos,
