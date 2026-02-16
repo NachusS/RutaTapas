@@ -694,3 +694,20 @@ body.is-map-max{
   outline: 2px solid rgba(26,115,232,.55);
   box-shadow: 0 0 0 6px rgba(26,115,232,.12);
 }
+
+/* ===== Logo en cabecera ===== */
+.brand-mark{
+  display: inline-block;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 1.0rem;
+  background-image: url("../assets/cover.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  /* oculta cualquier texto/emoji dentro */
+  font-size: 0;
+  color: transparent;
+  overflow: hidden;
+}
