@@ -731,3 +731,17 @@ body.is-map-max{
   gap: 1.2rem;
   margin-top: 1.2rem;
 }
+
+/* Estrellas dentro de la tarjeta de parada */
+.stars--inline{
+  display: flex;
+  gap: .4rem;
+  margin-top: .6rem;
+  flex-wrap: wrap;
+}
+.star-btn--sm{
+  font-size: 1.6rem;
+  padding: .2rem .35rem;
+  border-radius: .8rem;
+  line-height: 1;
+}

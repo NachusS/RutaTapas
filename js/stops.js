@@ -164,6 +164,33 @@ function stopItem(routeId, stop, prog, favs){
   meta.appendChild(makeEl('div','title', (stop.order || '') + '. ' + (stop.name || 'Parada')));
   meta.appendChild(makeEl('div','sub', stop.tapa ? ('Tapa: ' + stop.tapa) : (stop.address || '')));
 
+  // Valoración (5 estrellas, sin etiqueta)
+  const ratingVal = Number((prog.stopRatings && prog.stopRatings[stop.id]) || 0);
+  const stars = makeEl('div','stars stars--inline','');
+  for(let i=1;i<=5;i++){
+    const b = makeEl('button','star-btn star-btn--sm', i <= ratingVal ? '★' : '☆');
+    b.type = 'button';
+    b.setAttribute('aria-label','Puntuar ' + i + ' de 5');
+    b.setAttribute('aria-pressed', String(i <= ratingVal));
+    b.addEventListener('click',(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      prog.stopRatings = (prog.stopRatings && typeof prog.stopRatings === 'object') ? prog.stopRatings : {};
+      prog.stopRatings[stop.id] = i;
+      saveProgress(routeId, prog);
+      try{
+        const btns = stars.querySelectorAll('button');
+        btns.forEach((btn, idx)=>{
+          const v = idx+1;
+          btn.textContent = v <= i ? '★' : '☆';
+          btn.setAttribute('aria-pressed', String(v <= i));
+        });
+      }catch(_e){}
+    });
+    stars.appendChild(b);
+  }
+  meta.appendChild(stars);
+
   const right = makeEl('div','right','');
 
   // Toggle hecha/pendiente (sin etiqueta textual)
