@@ -79,10 +79,11 @@ export function renderWelcome(root){
     const avatars = makeEl('div','avatar-row','');
 
     const avatarFiles = [
-      'assets/avatars/avatar_01.jpg',
-      'assets/avatars/avatar_02.jpg',
-      'assets/avatars/avatar_03.jpg',
-      'assets/avatars/avatar_04.jpg'
+      'assets/avatars/avatar-01.svg',
+      'assets/avatars/avatar-02.svg',
+      'assets/avatars/avatar-03.svg',
+      'assets/avatars/avatar-04.svg',
+      'assets/avatars/avatar-05.svg'
     ];
 
     let selectedAvatar = avatarFiles[0];
@@ -193,7 +194,7 @@ export function renderWelcome(root){
   const avatarWrap = makeEl('div','welcome2-avatar','');
   const img = document.createElement('img');
   img.alt = 'Foto de perfil';
-  img.src = prof.photoDataUrl ? prof.photoDataUrl : assetUrl(prof.avatar || 'assets/avatars/avatar_01.jpg');
+  img.src = prof.photoDataUrl ? prof.photoDataUrl : assetUrl(prof.avatar || 'assets/avatars/avatar-01.svg');
   avatarWrap.appendChild(img);
   avatarWrap.appendChild(makeEl('div','welcome2-badge','Foodie Experto'));
 
@@ -240,7 +241,7 @@ export function renderProfile(root){
   img.className = 'stop-photo';
   img.style.height = '18rem';
   img.alt = 'Foto de perfil';
-  img.src = prof.photoDataUrl ? prof.photoDataUrl : assetUrl(prof.avatar || 'assets/avatars/avatar_01.jpg');
+  img.src = prof.photoDataUrl ? prof.photoDataUrl : assetUrl(prof.avatar || 'assets/avatars/avatar-01.svg');
   row.appendChild(img);
   card.appendChild(row);
 

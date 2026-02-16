@@ -228,7 +228,7 @@ async function initRouteMap(el, data, routeId){
   if(!el) return;
   await loadGoogleMaps();
 
-  const stops = (data && data.stops) ? data.stops : [];
+  const stops = (data && Array.isArray(data.stops)) ? data.stops.slice().sort((a,b)=> (a.order||0)-(b.order||0)) : [];
   const total = stops.length;
 
   const startCenter = (data && data.meta && data.meta.start)
@@ -245,18 +245,16 @@ async function initRouteMap(el, data, routeId){
     zoomControl: true
   });
 
-  // Exponer para el botón maximizar (resize)
+  // Exponer para maximizar (resize)
   el.__rt_map = map;
 
   const bounds = new window.google.maps.LatLngBounds();
-
-  // InfoWindow único
   const info = new window.google.maps.InfoWindow();
 
   function openStopPopup(stop){
-    if(!stop) return;
+    if(!stop || !stop.__marker) return;
     const wrap = document.createElement('div');
-    wrap.style.maxWidth = '240px';
+    wrap.style.maxWidth = '260px';
 
     const t = document.createElement('div');
     t.style.fontWeight = '900';
@@ -281,7 +279,7 @@ async function initRouteMap(el, data, routeId){
     info.open({ map, anchor: stop.__marker });
   }
 
-  // Marcadores: inicio/fin + paradas
+  // ===== Marcadores: inicio/fin + paradas =====
   if(data && data.meta && data.meta.start){
     const p = { lat: data.meta.start.lat, lng: data.meta.start.lng };
     new window.google.maps.Marker({ position: p, map, label: { text: '🏁', fontSize: '18px' } });
@@ -303,39 +301,85 @@ async function initRouteMap(el, data, routeId){
 
   if(!bounds.isEmpty()) map.fitBounds(bounds, 64);
 
-  // Mi posición (tracking)
+  // ===== RUTA COMPLETA (Inicio -> Fin pasando por paradas) =====
+  const dirSvc = new window.google.maps.DirectionsService();
+
+  const dottedPolyline = {
+    strokeOpacity: 0,
+    icons: [{
+      icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+      offset: '0',
+      repeat: '14px'
+    }]
+  };
+
+  const fullRouteRenderer = new window.google.maps.DirectionsRenderer({
+    suppressMarkers: true,
+    preserveViewport: true,
+    polylineOptions: dottedPolyline
+  });
+  fullRouteRenderer.setMap(map);
+
+  async function drawFullRoute(){
+    if(stops.length < 2) return;
+
+    const origin = { lat: stops[0].lat, lng: stops[0].lng };
+    const destination = { lat: stops[stops.length-1].lat, lng: stops[stops.length-1].lng };
+    const waypoints = stops.slice(1, -1).map(s => ({ location: { lat: s.lat, lng: s.lng }, stopover: true }));
+
+    dirSvc.route({
+      origin,
+      destination,
+      waypoints,
+      optimizeWaypoints: false,
+      travelMode: window.google.maps.TravelMode.WALKING
+    }, (result, status)=>{
+      if(status === 'OK' && result){
+        fullRouteRenderer.setDirections(result);
+      }
+      // Si falla por límites o cualquier cosa, fallback a línea directa punteada
+      if(status !== 'OK'){
+        try{
+          const path = stops.map(s => ({ lat: s.lat, lng: s.lng }));
+          const line = new window.google.maps.Polyline({
+            path,
+            geodesic: true,
+            strokeOpacity: 0,
+            icons: dottedPolyline.icons
+          });
+          line.setMap(map);
+        }catch(_e){}
+      }
+    });
+  }
+
+  drawFullRoute();
+
+  // ===== Mi posición + ruta a la siguiente parada =====
   let userMarker = null;
   let lastUserPos = null;
 
-  // Directions (a pie) + polyline punteada
-  const dirSvc = new window.google.maps.DirectionsService();
-  let dirRenderer = new window.google.maps.DirectionsRenderer({
+  const userRouteRenderer = new window.google.maps.DirectionsRenderer({
     suppressMarkers: true,
     preserveViewport: true,
-    polylineOptions: {
-      strokeOpacity: 0,
-      icons: [{
-        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
-        offset: '0',
-        repeat: '14px'
-      }]
-    }
+    polylineOptions: dottedPolyline
   });
-  dirRenderer.setMap(map);
+  userRouteRenderer.setMap(map);
 
   function getProg(){
     return getProgress(routeId);
   }
+
   function getNextStopFromProg(){
     const prog = getProg();
     return nextStop(data, prog);
   }
 
-  let lastRoutedStopId = null;
   let routingEnabled = false;
+  let lastRoutedStopId = null;
   let routeThrottle = 0;
 
-  async function routeToStop(stop){
+  function routeUserToStop(stop){
     if(!stop || !lastUserPos) return;
     lastRoutedStopId = stop.id;
 
@@ -345,21 +389,25 @@ async function initRouteMap(el, data, routeId){
       travelMode: window.google.maps.TravelMode.WALKING
     }, (result, status)=>{
       if(status === 'OK' && result){
-        dirRenderer.setDirections(result);
+        userRouteRenderer.setDirections(result);
         openStopPopup(stop);
       }
     });
   }
 
   function maybeAutoRoute(){
+    const prog = getProg();
+    // si ya se había comenzado anteriormente, se considera activa
+    if(prog && prog.startedAt) routingEnabled = true;
     if(!routingEnabled) return;
+
     const stop = getNextStopFromProg();
     if(!stop) return;
-    // si cambia la parada objetivo, recalcula siempre
+
     const now = Date.now();
     if(stop.id !== lastRoutedStopId || (now - routeThrottle) > 2500){
       routeThrottle = now;
-      routeToStop(stop);
+      routeUserToStop(stop);
     }
   }
 
@@ -378,7 +426,6 @@ async function initRouteMap(el, data, routeId){
       maybeAutoRoute();
     }, ()=>{}, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
 
-    // Cleanup si navegas y el nodo desaparece
     const obs = new MutationObserver(()=>{
       if(!document.body.contains(el)){
         try{ navigator.geolocation.clearWatch(watchId); }catch(_e){}
@@ -388,8 +435,7 @@ async function initRouteMap(el, data, routeId){
     obs.observe(document.body, { childList:true, subtree:true });
   }
 
-  // Eventos desde la UI (Comenzar / Siguiente)
-  // El renderActiveRoute despacha estos eventos.
+  // Eventos desde UI
   function onStart(){
     routingEnabled = true;
     lastRoutedStopId = null;
@@ -403,7 +449,6 @@ async function initRouteMap(el, data, routeId){
   window.addEventListener('rt:startRoute', onStart);
   window.addEventListener('rt:nextStop', onNext);
 
-  // Cleanup listeners si se destruye el mapa
   const obs2 = new MutationObserver(()=>{
     if(!document.body.contains(el)){
       window.removeEventListener('rt:startRoute', onStart);
@@ -413,6 +458,7 @@ async function initRouteMap(el, data, routeId){
   });
   obs2.observe(document.body, { childList:true, subtree:true });
 }
+
 
 
 export function renderActiveRoute(root, route, data){
